@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grid Guardians – Energy Crisis</title>
+  <link rel="stylesheet" href="figma_css.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── MENU SCREEN ── */
+    .menu-screen {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, #1a3d0a 0%, #0a1f05 100%);
+      gap: 28px; padding: 24px;
+      background-image:
+        radial-gradient(ellipse at 50% 30%, #1a3d0a 0%, #0a1f05 100%),
+        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.015) 10px, rgba(255,255,255,0.015) 11px);
+    }
+    .menu-screen.hidden { display: none; }
+
+    .menu-logo {
+      width: min(460px, 88vw);
+      filter: drop-shadow(0 0 40px rgba(212,160,23,0.45));
+      animation: logoFloat 3s ease-in-out infinite;
+    }
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-7px); }
+    }
+
+    .menu-card {
+      background: var(--parchment, #fdf6e3);
+      border: 4px solid var(--card-wood, #c8a96e);
+      border-radius: 18px;
+      padding: 28px 32px;
+      width: min(400px, 92vw);
+      display: flex; flex-direction: column; gap: 14px;
+      box-shadow:
+        0 0 0 2px var(--card-border, #6b4c1e),
+        0 20px 60px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+    .menu-label {
+      font-family: 'Cinzel', serif;
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-light, #5a3e28);
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .menu-input {
+      width: 100%; padding: 12px 14px;
+      background: #fffdf5;
+      border: 2px solid var(--card-wood, #c8a96e);
+      border-radius: 10px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px; font-weight: 600; color: var(--ink, #2c1a0e);
+      outline: none; transition: border-color .2s, box-shadow .2s;
+    }
+    .menu-input::placeholder { color: rgba(44,26,14,0.35); }
+    .menu-input:focus { border-color: var(--accent-gold, #d4a017); box-shadow: 0 0 0 3px rgba(212,160,23,0.2); }
+
+    .menu-btn {
+      padding: 14px; border-radius: 11px;
+      border: none;
+      background: linear-gradient(135deg, var(--card-wood, #c8a96e), var(--card-wood-dark, #a0804a));
+      color: #fff; font-family: 'Cinzel', serif;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    .menu-btn:hover { opacity: 0.9; transform: translateY(-2px); }
+    .menu-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .menu-players {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      min-height: 32px;
+    }
+    .player-badge {
+      padding: 4px 12px; border-radius: 9999px;
+      background: rgba(212,160,23,0.15);
+      border: 1px solid rgba(212,160,23,0.5);
+      color: var(--ink-light, #5a3e28); font-size: 13px; font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+    }
+    .menu-status {
+      font-size: 12px; color: var(--ink-light, #5a3e28);
+      font-family: 'Nunito', sans-serif; text-align: center;
+      opacity: 0.6;
+    }
+
+    /* ── PLAYER LIST IN GAME ── */
+    .players-bar {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      justify-content: center; margin-bottom: 8px;
+    }
+    .player-chip {
+      padding: 4px 12px; border-radius: 9999px;
+      background: rgba(200,169,110,0.2);
+      border: 1px solid rgba(200,169,110,0.5);
+      color: var(--parchment, #fdf6e3); font-size: 12px; font-weight: 700;
+      font-family: 'Nunito', sans-serif;
+    }
+    .player-chip.me {
+      background: rgba(212,160,23,0.3);
+      border-color: var(--accent-gold, #d4a017);
+      color: var(--accent-gold-light, #f0c040);
+    }
+
+    /* ── ENDGAME TWO BUTTONS ── */
+    .endgame-actions {
+      display: flex; gap: 12px; width: 100%; margin-top: 8px;
+    }
+    .endgame-btn {
+      flex: 1; padding: 13px;
+      border: none; border-radius: 11px;
+      font-family: 'Cinzel', serif;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .endgame-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+    .endgame-btn--restart { background: linear-gradient(135deg, #c8a96e, #a0804a); color: #fff; }
+    .endgame-btn--menu    { background: linear-gradient(135deg, #2d5a1b, #1e4010); color: #fff; }
+
+    /* Override single restart button (hide old one) */
+    .endgame-restart { display: none !important; }
+
+    /* ── DIALOG CLOSE BUTTON ── */
+    .dialog-close-btn {
+      position: absolute; top: 12px; right: 12px;
+      width: 30px; height: 30px;
+      border: 2px solid var(--card-wood, #c8a96e);
+      border-radius: 50%;
+      background: var(--parchment-dark, #f0e4c0);
+      color: var(--ink, #2c1a0e);
+      font-size: 14px; line-height: 1;
+      cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: background .15s, transform .1s;
+      font-family: inherit;
+      font-weight: 700;
+    }
+    .dialog-close-btn:hover { background: #e8d5b0; transform: scale(1.1); }
+    .dialog-box { position: relative; }
+
+    /* ── CHAT PANEL — always on top, even above dialog ── */
+    .chat-panel {
+      position: fixed;
+      bottom: 14px; right: 14px;
+      width: 250px;
+      background: var(--parchment, #fdf6e3);
+      border-radius: 14px;
+      border: 3px solid var(--card-wood, #c8a96e);
+      box-shadow:
+        0 0 0 1px var(--card-border, #6b4c1e),
+        0 8px 28px rgba(0,0,0,0.35);
+      display: flex; flex-direction: column;
+      z-index: 150; /* above dialog overlay (100) */
+      overflow: hidden;
+      transition: height .22s ease;
+    }
+    .chat-panel.collapsed { height: 42px; }
+    .chat-panel.expanded  { height: 260px; }
+
+    .chat-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 12px;
+      background: linear-gradient(135deg, var(--card-wood, #c8a96e), var(--card-wood-dark, #a0804a));
+      color: #fff;
+      cursor: pointer; flex-shrink: 0;
+      border-radius: 10px 10px 0 0;
+      font-family: 'Cinzel', serif;
+      font-size: 12px; font-weight: 700;
+      user-select: none;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    }
+    .chat-header-title { display: flex; align-items: center; gap: 6px; }
+    .chat-toggle-icon { font-size: 9px; transition: transform .2s; }
+    .chat-panel.collapsed .chat-toggle-icon { transform: rotate(180deg); }
+
+    .chat-messages {
+      flex: 1; overflow-y: auto;
+      padding: 8px 10px;
+      display: flex; flex-direction: column; gap: 5px;
+      font-size: 12px;
+      background: var(--parchment, #fdf6e3);
+    }
+    .chat-msg { display: flex; flex-direction: column; }
+    .chat-msg-author {
+      font-weight: 700; font-size: 10px;
+      color: var(--ink-light, #5a3e28); font-family: 'Nunito', sans-serif;
+      margin-bottom: 1px;
+    }
+    .chat-msg-author.me { color: #6d28d9; }
+    .chat-msg-text {
+      background: #f0e4c0; color: var(--ink, #2c1a0e);
+      border-radius: 0 8px 8px 8px;
+      padding: 5px 8px;
+      font-family: 'Nunito', sans-serif;
+      line-height: 1.35; word-break: break-word;
+      font-size: 12px;
+      border: 1px solid rgba(200,169,110,0.4);
+    }
+    .chat-msg.mine .chat-msg-text {
+      background: #e8d5f0; border-radius: 8px 8px 0 8px;
+      border-color: rgba(139,92,246,0.3);
+    }
+    .chat-msg.mine { align-items: flex-end; }
+
+    .chat-input-row {
+      display: flex; gap: 5px;
+      padding: 6px 8px;
+      border-top: 2px solid var(--card-wood, #c8a96e);
+      flex-shrink: 0;
+      background: var(--parchment-dark, #f0e4c0);
+    }
+    .chat-input {
+      flex: 1; padding: 5px 8px;
+      border: 1.5px solid var(--card-wood, #c8a96e); border-radius: 8px;
+      font-family: 'Nunito', sans-serif; font-size: 12px;
+      color: var(--ink, #2c1a0e); outline: none;
+      transition: border-color .15s;
+      background: #fffdf5;
+    }
+    .chat-input:focus { border-color: var(--accent-gold, #d4a017); }
+    .chat-send-btn {
+      padding: 5px 9px;
+      background: linear-gradient(135deg, var(--card-wood, #c8a96e), var(--card-wood-dark, #a0804a));
+      color: #fff;
+      border: none; border-radius: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 11px; font-weight: 700;
+      cursor: pointer; transition: opacity .15s;
+      flex-shrink: 0;
+    }
+    .chat-send-btn:hover { opacity: 0.85; }
+    .chat-unread-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #ef4444; display: none;
+      flex-shrink: 0;
+    }
+    .chat-unread-dot.visible { display: inline-block; }
+
+    /* ── ENDGAME CHAT LOG ── */
+    .endgame-chat-toggle {
+      background: none; border: 2px solid var(--card-wood, #c8a96e);
+      border-radius: 9px; padding: 7px 16px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--ink-light, #5a3e28);
+      cursor: pointer; transition: border-color .15s, background .15s;
+      width: 100%;
+    }
+    .endgame-chat-toggle:hover { border-color: var(--accent-gold, #d4a017); background: #fffbe8; }
+    .endgame-chat-log {
+      display: none;
+      width: 100%;
+      max-height: 160px;
+      overflow-y: auto;
+      background: #fffdf5;
+      border: 2px solid var(--card-wood, #c8a96e);
+      border-radius: 10px;
+      padding: 10px 12px;
+      flex-direction: column;
+      gap: 5px;
+      text-align: left;
+    }
+    .endgame-chat-log.open { display: flex; }
+    .endgame-chat-entry { font-size: 12px; font-family: 'Nunito', sans-serif; color: var(--ink-light, #5a3e28); }
+    .endgame-chat-entry strong { color: var(--ink, #2c1a0e); }
+
+    /* ── MOBILE RESPONSIVE ── */
+    @media (max-width: 500px) {
+      .chat-panel {
+        width: calc(100vw - 28px);
+        right: 14px; left: 14px;
+      }
+      .chat-panel.expanded { height: 220px; }
+      .endgame-box { padding: 24px 18px; }
+      .endgame-title { font-size: 20px; }
+      .score-label { width: 100px; font-size: 11px; }
+      .score-num { width: 70px; font-size: 11px; }
+      .dialog-box { padding: 20px 16px; }
+      .dialog-title { font-size: 15px; }
+      .question-text { font-size: 14px; }
+      .option-btn { padding: 10px 12px; font-size: 13px; }
+      .endgame-actions { flex-direction: column; }
+    }
+    @media (max-width: 380px) {
+      .menu-card { padding: 20px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════
+     MENU SCREEN
+══════════════════════════════════════════════ -->
+<div class="menu-screen" id="menu-screen">
+  <img src="logo.png" alt="Grid Guardians – Energy Crisis" class="menu-logo"
+       onerror="this.style.display='none'; document.getElementById('menu-title-fallback').style.display='block'"/>
+  <div id="menu-title-fallback" style="display:none; font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700; color:#fff; text-align:center; text-shadow: 0 0 40px rgba(80,140,255,0.8);">
+    ⚡ Grid Guardians<br><span style="font-size:20px; color:#93c5fd;">Energy Crisis</span>
+  </div>
+
+  <div class="menu-card">
+    <span class="menu-label">Players in lobby</span>
+    <div class="menu-players" id="lobby-players">
+      <span class="menu-status">No players yet…</span>
+    </div>
+
+    <span class="menu-label">Your name</span>
+    <input class="menu-input" id="player-name-input" type="text"
+           placeholder="Enter your name…" maxlength="20"
+           onkeydown="if(event.key==='Enter') joinGame()"/>
+
+    <button class="menu-btn" id="join-btn" onclick="joinGame()">Join Game →</button>
+    <div class="menu-status" id="menu-status-msg">Enter your name to join</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     GAME SCREEN
+══════════════════════════════════════════════ -->
+<div class="page" id="game-screen" style="display:none; flex-direction:column;">
+  <div style="width:100%; max-width:920px; margin:0 auto 6px;">
+    <div class="players-bar" id="players-bar"></div>
+  </div>
+  <div class="board-wrapper">
+    <div class="player-token" id="player-token"></div>
+    <div class="board-grid" id="board-grid">
+
+      <!-- TOP ROW (0–6) -->
+      <button class="tile tile--solar active" data-index="0" data-type="solar"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><span>Solar energy</span></button>
+      <button class="tile tile--wind" data-index="1" data-type="wind"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg><span>Wind energy</span></button>
+      <button class="tile tile--nuclear" data-index="2" data-type="nuclear"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h4M17 12h4M12 3v4M12 17v4M5.636 5.636l2.828 2.828M15.536 15.536l2.828 2.828M18.364 5.636l-2.828 2.828M8.464 15.536l-2.828 2.828"/></svg><span>Nuclear energy</span></button>
+      <button class="tile tile--geo" data-index="3" data-type="geothermal"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>Geothermal</span></button>
+      <button class="tile tile--bio" data-index="4" data-type="biomass"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.6 2 3.6-2.4-.4-4.6.3-5.8.8A5.7 5.7 0 0 1 9.5 9.4z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.9 1.2 4.7 2.1A5.7 5.7 0 0 0 14.1 6z"/></svg><span>Bioenergy</span></button>
+      <button class="tile tile--challenge" data-index="5" data-type="challenge"><svg viewBox="0 0 24 24" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Challenge</span></button>
+      <button class="tile tile--solar" data-index="6" data-type="solar"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><span>Solar energy</span></button>
+
+      <!-- ROW 2 -->
+      <button class="tile tile--challenge" data-index="7" data-type="challenge"><svg viewBox="0 0 24 24" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Challenge</span></button>
+      <div class="empty col-span-5"></div>
+      <button class="tile tile--wind" data-index="8" data-type="wind"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg><span>Wind energy</span></button>
+
+      <!-- ROW 3 -->
+      <button class="tile tile--solar" data-index="9" data-type="solar"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><span>Solar energy</span></button>
+      <div class="empty col-span-5"></div>
+      <button class="tile tile--crisis" data-index="10" data-type="crisis"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>Crisis</span></button>
+
+      <!-- ROW 4 -->
+      <button class="tile tile--wind" data-index="11" data-type="wind"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg><span>Wind energy</span></button>
+      <div class="metrics-panel">
+        <div class="metrics-inner">
+          <div><div class="metric-header"><span class="metric-label">💰 Economy</span><span class="metric-value eco" id="eco-val">25</span></div><input type="range" min="0" max="50" value="25" class="slider eco" id="eco-slider" style="--val:50" readonly></div>
+          <div><div class="metric-header"><span class="metric-label">🌿 Environment</span><span class="metric-value env" id="env-val">25</span></div><input type="range" min="0" max="50" value="25" class="slider env" id="env-slider" style="--val:50" readonly></div>
+          <div><div class="metric-header"><span class="metric-label">👥 Society</span><span class="metric-value soc" id="soc-val">25</span></div><input type="range" min="0" max="50" value="25" class="slider soc" id="soc-slider" style="--val:50" readonly></div>
+          <div><div class="metric-header"><span class="metric-label">⚡ EU Counter</span><span class="metric-value eu" id="eu-val">0</span></div><input type="range" min="0" max="50" value="0" class="slider eu" id="eu-slider" style="--val:0" readonly></div>
+        </div>
+      </div>
+      <button class="tile tile--nuclear" data-index="12" data-type="nuclear"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h4M17 12h4M12 3v4M12 17v4M5.636 5.636l2.828 2.828M15.536 15.536l2.828 2.828M18.364 5.636l-2.828 2.828M8.464 15.536l-2.828 2.828"/></svg><span>Nuclear energy</span></button>
+
+      <!-- ROW 5 -->
+      <button class="tile tile--nuclear" data-index="13" data-type="nuclear"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h4M17 12h4M12 3v4M12 17v4M5.636 5.636l2.828 2.828M15.536 15.536l2.828 2.828M18.364 5.636l-2.828 2.828M8.464 15.536l-2.828 2.828"/></svg><span>Nuclear energy</span></button>
+      <button class="tile tile--solar" data-index="19" data-type="solar" style="grid-column:7"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg><span>Solar energy</span></button>
+
+      <!-- ROW 6 -->
+      <button class="tile tile--challenge" data-index="14" data-type="challenge"><svg viewBox="0 0 24 24" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Challenge</span></button>
+      <button class="tile tile--challenge" data-index="18" data-type="challenge" style="grid-column:7"><svg viewBox="0 0 24 24" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Challenge</span></button>
+
+      <!-- BOTTOM ROW -->
+      <button class="tile tile--geo" data-index="15" data-type="geothermal"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>Geothermal</span></button>
+      <button class="tile tile--crisis" data-index="16" data-type="crisis"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>Crisis</span></button>
+      <button class="tile tile--bio" data-index="17" data-type="biomass"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.6 2 3.6-2.4-.4-4.6.3-5.8.8A5.7 5.7 0 0 1 9.5 9.4z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.9 1.2 4.7 2.1A5.7 5.7 0 0 0 14.1 6z"/></svg><span>Bioenergy</span></button>
+      <button class="tile tile--wind" data-index="20" data-type="wind"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></svg><span>Wind energy</span></button>
+      <button class="tile tile--nuclear" data-index="21" data-type="nuclear"><svg viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M3 12h4M17 12h4M12 3v4M12 17v4M5.636 5.636l2.828 2.828M15.536 15.536l2.828 2.828M18.364 5.636l-2.828 2.828M8.464 15.536l-2.828 2.828"/></svg><span>Nuclear energy</span></button>
+      <button class="tile tile--geo" data-index="22" data-type="geothermal"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg><span>Geothermal</span></button>
+      <button class="tile tile--bio" data-index="23" data-type="biomass"><svg viewBox="0 0 24 24" stroke-width="2"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.6 2 3.6-2.4-.4-4.6.3-5.8.8A5.7 5.7 0 0 1 9.5 9.4z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.9 1.2 4.7 2.1A5.7 5.7 0 0 0 14.1 6z"/></svg><span>Bioenergy</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- DIALOG -->
+<div class="dialog-overlay" id="dialog">
+  <div class="dialog-box">
+    <button class="dialog-close-btn" id="dialog-close-btn" onclick="closeDialog()" title="Close">✕</button>
+    <div class="dialog-header">
+      <div class="dialog-progress" id="dialog-progress"></div>
+      <div class="dialog-title" id="dialog-title">Question</div>
+      <div class="dialog-desc" id="dialog-desc">Answer the question correctly to earn a reward.</div>
+    </div>
+    <div id="question-area">
+      <p class="question-text" id="question-text"></p>
+      <div class="options" id="options-list"></div>
+    </div>
+    <div id="result-area" style="display:none;">
+      <div class="result-box" id="result-box">
+        <p class="result-title" id="result-title"></p>
+        <p class="result-sub" id="result-sub"></p>
+        <div class="metric-delta" id="metric-delta"></div>
+      </div>
+      <button class="continue-btn" onclick="onContinue()" style="margin-top:12px;">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- END GAME -->
+<div class="endgame-overlay" id="endgame" style="display:none;">
+  <div class="endgame-box">
+    <div class="endgame-icon" id="endgame-icon"></div>
+    <h1 class="endgame-title" id="endgame-title"></h1>
+    <p class="endgame-sub" id="endgame-sub"></p>
+    <div class="endgame-scores" id="endgame-scores"></div>
+    <button class="endgame-chat-toggle" id="endgame-chat-toggle" onclick="toggleEndgameChatLog()">💬 Show Chat Log</button>
+    <div class="endgame-chat-log" id="endgame-chat-log"></div>
+    <div class="endgame-actions">
+      <button class="endgame-btn endgame-btn--restart" onclick="restartGame()">🔄 Restart</button>
+      <button class="endgame-btn endgame-btn--menu"    onclick="goToMenu()">🏠 Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT PANEL (shown only during game) -->
+<div class="chat-panel collapsed" id="chat-panel" style="display:none;">
+  <div class="chat-header" onclick="toggleChat()">
+    <div class="chat-header-title">
+      💬 Chat
+      <span class="chat-unread-dot" id="chat-unread"></span>
+    </div>
+    <span class="chat-toggle-icon">▲</span>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="chat-input" type="text"
+           placeholder="Type a message…" maxlength="200"
+           onkeydown="if(event.key==='Enter') sendChat()"/>
+    <button class="chat-send-btn" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ============================================================
+// SUPABASE CONFIG — замінити на свої ключі після створення проєкту
+// ============================================================
+var SUPABASE_URL = 'https://zerlepghxopuqyveywmm.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_K7G5MautQBABbxH9eJX3Bg_hf8WCz4t';
+var ROOM_ID      = 'main-room'; // всі гравці в одній кімнаті
+
+var sb = null;
+var channel = null;
+var myName  = '';
+var players = {}; // { name: true }
+
+function initSupabase(){
+  if(sb) return; // already initialised
+  try {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch(e) {
+    console.warn('Supabase not configured — running in local mode');
+  }
+}
+
+// ── Anonymous lobby channel (read-only presence, no name) ──
+var lobbyChannel = null;
+
+function initLobbyWatcher(){
+  if(!sb) return;
+  if(lobbyChannel){ lobbyChannel.unsubscribe(); lobbyChannel = null; }
+
+  lobbyChannel = sb.channel(ROOM_ID, { config:{ presence:{ key: 'lobby-observer-' + Math.random() } } });
+  lobbyChannel.on('presence', { event: 'sync' }, function(){
+    var pState = lobbyChannel.presenceState();
+    players = {};
+    Object.keys(pState).forEach(function(k){
+      pState[k].forEach(function(p){ if(p.name) players[p.name] = true; });
+    });
+    renderLobbyPlayers();
+  });
+  // Subscribe but do NOT track — we're just observing
+  lobbyChannel.subscribe();
+}
+
+// ── Subscribe to presence (player list) + broadcast (game events) ──
+function subscribeRoom(){
+  if(!sb) return;
+
+  // Stop the anonymous lobby watcher — we'll use the game channel now
+  if(lobbyChannel){ lobbyChannel.unsubscribe(); lobbyChannel = null; }
+
+  channel = sb.channel(ROOM_ID, { config:{ presence:{ key: myName } } });
+
+  // Presence — who is online
+  channel.on('presence', { event: 'sync' }, function(){
+    var pState = channel.presenceState();
+    players = {};
+    Object.keys(pState).forEach(function(k){
+      pState[k].forEach(function(p){ if(p.name) players[p.name] = true; });
+    });
+    renderPlayersBar();
+    renderLobbyPlayers();
+  });
+
+  // Broadcast — shared game actions
+  channel.on('broadcast', { event: 'game_action' }, function(payload){
+    handleRemoteAction(payload.payload);
+  });
+
+  channel.subscribe(function(status){
+    if(status === 'SUBSCRIBED'){
+      channel.track({ name: myName });
+      // Ask existing players to send us their current state
+      broadcastAction({ type: 'request_state', from: myName });
+    }
+  });
+}
+
+function broadcastAction(action){
+  if(!channel) return;
+  channel.send({ type:'broadcast', event:'game_action', payload: action });
+}
+
+function renderPlayersBar(){
+  var bar = document.getElementById('players-bar');
+  if(!bar) return;
+  bar.innerHTML = Object.keys(players).map(function(n){
+    return '<span class="player-chip'+(n===myName?' me':'')+'">'+
+      (n===myName?'👤 ':'')+n+'</span>';
+  }).join('');
+}
+
+function renderLobbyPlayers(){
+  var el = document.getElementById('lobby-players');
+  if(!el) return;
+  var names = Object.keys(players);
+  if(names.length === 0){
+    el.innerHTML = '<span class="menu-status">No players yet…</span>';
+  } else {
+    el.innerHTML = names.map(function(n){
+      return '<span class="player-badge">'+n+'</span>';
+    }).join('');
+  }
+}
+
+// ── Apply a remote action to local state ──
+function handleRemoteAction(action){
+  if(action.type === 'state_sync'){
+    state.eco          = action.eco;
+    state.env          = action.env;
+    state.soc          = action.soc;
+    state.eu           = action.eu;
+    state.currentIndex = action.currentIndex;
+    state.challengeIdx = action.challengeIdx;
+    state.crisisIdx    = action.crisisIdx;
+    updateSliders();
+    refreshBoard();
+  } else if(action.type === 'request_state'){
+    // A new player joined — if we're in-game, send them our current state
+    if(document.getElementById('game-screen').style.display !== 'none'){
+      // Small delay so the new player's channel subscription is fully ready
+      setTimeout(function(){
+        syncState();
+        // If a dialog is currently open, also push the current dialog snapshot
+        if(document.getElementById('dialog').classList.contains('open')){
+          broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+        }
+      }, 300);
+    }
+  } else if(action.type === 'game_over'){
+    showEndGame(true); // true = remote, don't re-broadcast
+  } else if(action.type === 'restart'){
+    applyRestart();
+  } else if(action.type === 'goto_menu'){
+    applyGoToMenu();
+  } else if(action.type === 'dialog_open'){
+    if(action.snapshot) applyDialogSnapshot(action.snapshot);
+    document.getElementById('dialog').classList.add('open');
+  } else if(action.type === 'dialog_close'){
+    document.getElementById('dialog').classList.remove('open');
+    tileClickEnabled = true;
+  } else if(action.type === 'chat_message'){
+    appendChatMessage(action.author, action.text, false);
+  } else if(action.type === 'remote_answer'){
+    // Another player answered — if we're the tile-owner (have _answerCb), evaluate it
+    if(_answerCb){
+      var cb = _answerCb; _answerCb = null;
+      document.getElementById('options-list').querySelectorAll('button').forEach(function(x){x.disabled=true;});
+      cb(action.optionIndex === _currentAnswerIndex);
+    }
+  } else if(action.type === 'remote_continue'){
+    if(_continueCb){ var cb=_continueCb; _continueCb=null; cb(); }
+  }
+}
+
+// Broadcast current state after every action
+function syncState(){
+  broadcastAction({
+    type:         'state_sync',
+    eco:          state.eco,
+    env:          state.env,
+    soc:          state.soc,
+    eu:           state.eu,
+    currentIndex: state.currentIndex,
+    challengeIdx: state.challengeIdx,
+    crisisIdx:    state.crisisIdx
+  });
+}
+
+// ============================================================
+// MENU LOGIC
+// ============================================================
+function joinGame(){
+  var inp = document.getElementById('player-name-input');
+  var name = inp.value.trim();
+  if(!name){ inp.focus(); return; }
+  myName = name;
+
+  document.getElementById('join-btn').disabled = true;
+  document.getElementById('menu-status-msg').textContent = 'Connecting…';
+
+  initSupabase();
+  subscribeRoom();
+
+  // Disable tile clicks — will be re-enabled once state_sync arrives (or after timeout if first player)
+  tileClickEnabled = false;
+
+  setTimeout(function(){
+    document.getElementById('menu-screen').classList.add('hidden');
+    document.getElementById('game-screen').style.display = 'flex';
+    document.getElementById('chat-panel').style.display = 'flex';
+    renderPlayersBar();
+    // Re-position the token now that the game-screen is visible and laid out
+    requestAnimationFrame(function(){
+      requestAnimationFrame(function(){
+        var bi = TILE_ORDER[state.currentIndex % TILE_ORDER.length];
+        moveToken(bi);
+      });
+    });
+    // If no state_sync arrives within 1.2s, assume we are the first player and start fresh
+    setTimeout(function(){
+      if(!tileClickEnabled) refreshBoard();
+    }, 1200);
+  }, 800);
+}
+
+function goToMenu(){
+  // Broadcast so others also return to menu
+  broadcastAction({ type: 'goto_menu' });
+  applyGoToMenu();
+}
+
+function applyGoToMenu(){
+  document.getElementById('endgame').style.display = 'none';
+  document.getElementById('dialog').classList.remove('open');
+  document.getElementById('game-screen').style.display = 'none';
+  document.getElementById('chat-panel').style.display = 'none';
+  document.getElementById('chat-messages').innerHTML = '';
+
+  // Reset input & status
+  var inp = document.getElementById('player-name-input');
+  inp.value = '';
+  document.getElementById('join-btn').disabled = false;
+  document.getElementById('menu-status-msg').textContent = 'Enter your name to join';
+  document.getElementById('menu-screen').classList.remove('hidden');
+
+  // Untrack presence so lobby updates
+  if(channel){ channel.untrack(); channel.unsubscribe(); channel = null; }
+  myName = ''; players = {};
+  renderLobbyPlayers();
+  // Re-start anonymous lobby watcher so the player can see who joins
+  initLobbyWatcher();
+
+  // Reset game state for next session
+  applyRestart(true /* silent */);
+}
+
+// ============================================================
+// QUESTIONS DATA
+// ============================================================
+var Q = {
+  solar:[
+    {q:"What is the main characteristic of solar energy that affects power system operation?",opts:["It depends only on demand","Its production is intermittent and varies with weather conditions","Its production is constant throughout the day","It is not affected by climate"],a:1},
+    {q:"In energy systems, what does it mean that solar energy is \"intermittent\"?",opts:["It is not economically efficient","It only operates in certain countries","Its production is not continuous and varies over time","It does not require maintenance"],a:2},
+    {q:"Which of the following factors has the greatest impact on solar energy production?",opts:["Number of users in the grid","Solar irradiance and angle of incidence","Type of fuel used","Length of transmission lines"],a:1},
+    {q:"What is the main role of storage systems in solar energy systems?",opts:["Balancing the difference between supply and demand","Increasing electricity consumption","Reducing the number of panels","Shutting down energy when needed"],a:0},
+    {q:"When integrating solar energy into the electrical grid, what is the main challenge?",opts:["Difficulty in predicting generation","Increasing frequency stability","Reducing the need for control","Increasing reliance on fuel"],a:0},
+    {q:"On a very hot day, what is the expected impact on solar energy systems?",opts:["Efficiency always increases","No effect","Efficiency decreases while demand increases","Production stops"],a:2},
+    {q:"How does solar energy contribute to sustainability?",opts:["By increasing fuel consumption","By reducing population","By reducing industrial production","By reducing CO₂ emissions"],a:3},
+    {q:"In a system heavily dependent on solar energy, what is the most realistic solution to maintain grid stability?",opts:["Rely entirely on solar energy","Increase consumption randomly","Shut down energy during low production","Use a combination of storage and demand management"],a:3},
+    {q:"Which of the following best describes the role of solar energy in the energy mix?",opts:["A fully stable base energy source","A flexible source dependent on conditions","A completely unreliable source","A full replacement for all other sources"],a:1},
+    {q:"When planning a solar-based energy system, what is the most important factor?",opts:["Number of people","Panel color","Balance between supply and demand","Wind speed"],a:2}
+  ],
+  wind:[
+    {q:"What is the main characteristic of wind energy that affects power system operation?",opts:["Constant production throughout the day","Variable production depending on wind speed","Fully controllable production","Not affected by weather conditions"],a:1},
+    {q:"What does the term Capacity Factor mean in wind energy?",opts:["Number of turbines in the farm","Turbine rotation speed","Ratio of actual output to maximum possible output","Cost of building the plant"],a:2},
+    {q:"What is the main difference between onshore and offshore wind farms?",opts:["Offshore sites have higher and more consistent wind speeds","Onshore always produces more energy","There is no difference in performance","Offshore is always cheaper"],a:0},
+    {q:"What is the main challenge when integrating wind energy into the electrical grid?",opts:["Increasing frequency stability","Reducing the need for control","Difficulty in predicting generation","Reducing electricity demand"],a:2},
+    {q:"What does Curtailment mean in wind energy systems?",opts:["Reducing or stopping production despite available wind","Increasing energy production","Improving turbine efficiency","Storing energy"],a:0},
+    {q:"How does wind speed affect energy production?",opts:["Production increases significantly with speed within certain limits","No direct effect","Always an inverse relationship","Production remains constant"],a:0},
+    {q:"What role can wind energy play in reducing emissions?",opts:["It increases emissions","It has no impact on emissions","It replaces all energy sources","It contributes to reducing CO₂ emissions"],a:3},
+    {q:"In a system highly dependent on wind energy, what is the most realistic solution to maintain grid stability?",opts:["Rely entirely on wind energy","Shut down turbines when wind changes","Use flexible sources or energy storage","Increase consumption randomly"],a:2},
+    {q:"What is one potential environmental impact of wind energy?",opts:["Water pollution","Fuel consumption","Impact on birds and landscapes","High emissions"],a:2},
+    {q:"What is the most important factor when selecting a wind farm site?",opts:["Population size","Proximity to cities only","Type of fuel used","Wind speed and consistency"],a:3}
+  ],
+  nuclear:[
+    {q:"What is the fundamental process used to generate energy in nuclear reactors?",opts:["Fusion of light atoms","Fission of heavy atomic nuclei","Chemical reaction between fuel and oxygen","Direct conversion of heat into electricity"],a:1},
+    {q:"What is meant by the role of nuclear energy as \"baseload\" in energy systems?",opts:["Producing energy only during peak hours","Providing flexible energy based on demand","Supplying the continuous minimum level of electricity demand","Producing seasonal energy"],a:2},
+    {q:"Which of the following characteristics distinguishes nuclear energy from most renewable sources?",opts:["It depends on weather conditions","Its production is continuous and predictable","It requires very large land areas","Its output cannot be controlled"],a:1},
+    {q:"What is the main challenge associated with nuclear waste management?",opts:["Low efficiency","Inability to reuse materials","High fuel consumption","Safe long-term storage"],a:3},
+    {q:"How does nuclear energy contribute to reducing carbon emissions?",opts:["By relying on low-carbon combustion","By using renewable fuels","By producing no direct emissions during operation","By reducing electricity demand"],a:2},
+    {q:"What is the main operational difference between nuclear and solar energy?",opts:["Nuclear depends on weather while solar does not","Both follow the same production pattern","Nuclear provides stable output while solar is variable","Solar provides more continuous output than nuclear"],a:2},
+    {q:"What role can nuclear energy play in grid stability?",opts:["Reducing system frequency","Providing a stable base generation source","Increasing output fluctuations","Reducing the need for control systems"],a:1},
+    {q:"What is one technical risk associated with nuclear reactor operation?",opts:["Reduced energy production","Loss of control over the nuclear reaction","Increased electricity consumption","Weather-related variability"],a:1},
+    {q:"Why is nuclear energy often combined with renewable energy sources in the energy mix?",opts:["Because they follow the same production pattern","Because it reduces energy demand","To balance stability with variable generation","Because it is always cheaper"],a:2},
+    {q:"What is the most critical factor for ensuring the safe operation of a nuclear power plant?",opts:["Availability of a reliable and continuous cooling system","Proximity to renewable energy sources","Low fuel cost","High electricity demand"],a:0}
+  ],
+  geothermal:[
+    {q:"What is the primary source of geothermal energy?",opts:["Heat generated from within the Earth","Solar radiation stored in the soil","Chemical reactions in the soil","Movement of groundwater"],a:0},
+    {q:"Which of the following characteristics distinguishes geothermal energy from solar energy?",opts:["It is highly dependent on weather conditions","Its production is intermittent","It provides more stable energy output","It always requires storage"],a:2},
+    {q:"What is the most important factor when selecting a site for a geothermal power plant?",opts:["Population size","Proximity to the sea","Wind speed","Presence of underground heat resources"],a:3},
+    {q:"What is one of the main challenges of geothermal energy?",opts:["Limited suitable geographic locations","Always low efficiency","High carbon emissions","Dependence on fossil fuels"],a:0},
+    {q:"Which of the following systems is used in geothermal power plants?",opts:["Direct combustion system","Nuclear fission system","Dry steam or flash steam systems","Solar photovoltaic systems"],a:2},
+    {q:"How does geothermal energy contribute to grid stability?",opts:["It depends on weather conditions","It provides relatively stable output","It is highly intermittent","It relies entirely on storage"],a:1},
+    {q:"What is a potential environmental impact of geothermal energy?",opts:["No environmental impact at all","High carbon emissions","Low emissions with possible release of underground gases","Nuclear pollution"],a:2},
+    {q:"In energy systems, how is geothermal energy typically classified?",opts:["Intermittent energy source","Unreliable energy source","Emergency energy source","Baseload energy source"],a:3},
+    {q:"What is one factor that affects the efficiency of geothermal energy extraction?",opts:["Number of users","Wind speed","Depth and temperature of the resource","Solar irradiance"],a:2},
+    {q:"Why is geothermal energy considered an important option in the energy mix?",opts:["It is always the cheapest option","It depends on fuel","It provides stable energy with low emissions","It operates only during peak demand"],a:2}
+  ],
+  biomass:[
+    {q:"What is meant by biomass energy?",opts:["Energy derived from organic materials such as plants and waste","Energy generated from wind","Energy generated from solar radiation","Energy produced from nuclear reactions"],a:0},
+    {q:"Which of the following sources is commonly used to produce biomass energy?",opts:["Rocks and minerals","Agricultural and organic waste","Groundwater only","Industrial gases"],a:1},
+    {q:"What is the difference between biofuel and biogas?",opts:["Biofuel is mainly used for transport, while biogas is used for heat or electricity","They are the same","Biogas is used only in industry","Biofuel does not produce energy"],a:0},
+    {q:"What is the main process used to produce biogas?",opts:["Direct combustion","Nuclear fission","Anaerobic digestion of organic materials","Thermal evaporation"],a:2},
+    {q:"What is one challenge associated with biomass energy?",opts:["Competition with land use for food production","Lack of available raw materials","Inability to store energy","Always low efficiency"],a:0},
+    {q:"How can biomass energy contribute to reducing emissions?",opts:["By reducing fossil fuel use","By producing zero emissions","By recycling carbon within the natural cycle","By increasing energy consumption"],a:2},
+    {q:"What is one difference between biomass energy and solar energy?",opts:["Both are equally intermittent","Biomass can be controlled and dispatched more easily","Solar energy is easier to store","There is no operational difference"],a:1},
+    {q:"In energy systems, how is biomass energy classified?",opts:["Always intermittent","Non-controllable energy source","Dispatchable energy source","Unstable energy source"],a:2},
+    {q:"What is a potential environmental impact of poorly managed biomass energy?",opts:["Reduced land use","Increased biodiversity","Deforestation and increased emissions","Reduced agricultural production only"],a:2},
+    {q:"Why is biomass energy considered an important part of the energy mix?",opts:["It is always the cheapest option","It requires no resources","It provides controllable and storable energy","It depends on weather conditions"],a:2}
+  ]
+};
+
+var CHALLENGE_CARDS=[
+  {name:"Semiconductor Factory",euCost:14,optA:{eco:8,env:3,soc:5},optB:{eco:10,env:-12,soc:4},optC:{eco:-7,env:1,soc:-4}},
+  {name:"Data Center",euCost:12,optA:{eco:7,env:3,soc:4},optB:{eco:9,env:-10,soc:3},optC:{eco:-5,env:1,soc:-5}},
+  {name:"Electric Transit Hub",euCost:10,optA:{eco:5,env:8,soc:8},optB:{eco:4,env:-8,soc:5},optC:{eco:-4,env:2,soc:-8}},
+  {name:"Urban Vertical Farm",euCost:9,optA:{eco:4,env:7,soc:7},optB:{eco:5,env:-7,soc:4},optC:{eco:-3,env:1,soc:-6}},
+  {name:"Green Steel Plant",euCost:16,optA:{eco:9,env:9,soc:5},optB:{eco:10,env:-14,soc:3},optC:{eco:-8,env:2,soc:-4}},
+  {name:"Desalination Plant",euCost:11,optA:{eco:5,env:5,soc:9},optB:{eco:6,env:-9,soc:6},optC:{eco:-3,env:1,soc:-9}}
+];
+
+var CRISIS_CARDS=[
+  {name:"Cyberattack on the Grid",euCost:8,reward:{eco:2,env:2,soc:5},penalty:{eu:-8,eco:-5,env:-5,soc:-7},
+   questions:[
+     {q:"A cyberattack disrupted control over part of the transmission system while demand remains high. What is the most critical immediate action?",opts:["Increase generation to stabilize supply","Isolate the affected section to prevent cascading failures","Reduce electricity prices to lower demand","Restart all systems simultaneously"],a:1},
+     {q:"Following the containment of the cyberattack, what is the safest recovery strategy?",opts:["Gradual system restoration with continuous monitoring","Immediate full system restart","Permanent shutdown of affected assets","Switching entirely to renewable sources"],a:0},
+     {q:"What is the main systemic risk if SCADA systems are compromised?",opts:["Reduced fuel efficiency","Inability to control voltage and frequency","Increased maintenance costs","Reduced demand variability"],a:1}
+   ]},
+  {name:"Extreme Heat Wave",euCost:10,reward:{eco:1,env:5,soc:6},penalty:{eu:-10,eco:-5,env:-5,soc:-7},
+   questions:[
+     {q:"A prolonged heat wave increases electricity demand while reducing generation efficiency. What is the most effective operational response?",opts:["Rely only on renewable energy","Implement demand-side management and flexible generation","Shut down parts of the grid","Ignore demand increase"],a:1},
+     {q:"What is the main risk of simultaneous high demand and reduced efficiency?",opts:["Lower electricity prices","Increased system stability","Supply-demand imbalance leading to instability","Reduced transmission losses"],a:2},
+     {q:"Which measure helps reduce peak load during extreme heat events?",opts:["Increasing base load generation only","Disconnecting industrial users permanently","Reducing renewable integration","Demand response programs"],a:3}
+   ]},
+  {name:"Hurricane Strike",euCost:12,reward:{eco:3,env:4,soc:8},penalty:{eu:-12,eco:-5,env:-5,soc:-7},
+   questions:[
+     {q:"A storm damages key transmission lines while generation capacity remains available. What is the primary issue?",opts:["Excess generation","Reduced efficiency","Inability to deliver power to consumers","Decreased demand"],a:2},
+     {q:"If wind generation drops suddenly after a storm, what is the main operational challenge?",opts:["Sudden loss of generation capacity","Increased grid stability","Reduced need for storage","Decreased transmission load"],a:0},
+     {q:"What is the most important system capability for handling extreme weather events?",opts:["High generation capacity only","Dependence on a single energy source","Minimal operational cost","System flexibility and resilience"],a:3}
+   ]},
+  {name:"EV Grid Overload",euCost:9,reward:{eco:4,env:7,soc:3},penalty:{eu:-9,eco:-5,env:-5,soc:-7},
+   questions:[
+     {q:"A rapid increase in EV charging during evening hours creates stress on the grid. What is the main issue?",opts:["Peak demand concentration","Reduced generation capacity","Lower system losses","Reduced transmission usage"],a:0},
+     {q:"What is the most effective strategy to reduce EV charging impact on the grid?",opts:["Increase generation capacity only","Limit the number of EVs","Implement smart charging schedules","Disconnect EV charging stations"],a:2},
+     {q:"What is the main benefit of distributing EV charging over time?",opts:["Reduced stress on the grid","Increased energy consumption","Higher emissions","Increased peak demand"],a:0}
+   ]}
+];
+
+// ============================================================
+// GAME STATE
+// ============================================================
+var state={eco:25,env:25,soc:25,eu:0,currentIndex:0,challengeIdx:0,crisisIdx:0,crisisCard:null,crisisQIdx:0,crisisAllCorrect:true};
+
+function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
+
+function applyDelta(d){
+  if(d.eco) state.eco=clamp(state.eco+d.eco,0,50);
+  if(d.env) state.env=clamp(state.env+d.env,0,50);
+  if(d.soc) state.soc=clamp(state.soc+d.soc,0,50);
+  if(d.eu)  state.eu =clamp(state.eu +d.eu ,0,50);
+  updateSliders();
+}
+
+function updateSliders(){
+  function set(id,sid,v,mx){
+    document.getElementById(id).textContent=v;
+    var s=document.getElementById(sid);
+    s.value=v; s.style.setProperty('--val',(v/mx*100).toFixed(1));
+  }
+  set('eco-val','eco-slider',state.eco,50);
+  set('env-val','env-slider',state.env,50);
+  set('soc-val','soc-slider',state.soc,50);
+  set('eu-val', 'eu-slider', state.eu, 50);
+}
+
+function deltaStr(d){
+  var pills='',map={eco:'💰',env:'🌿',soc:'👥',eu:'⚡'};
+  Object.keys(d).forEach(function(k){
+    if(!d[k]) return;
+    pills+='<span class="delta-pill">'+map[k]+' '+(d[k]>0?'+':'')+d[k]+'</span>';
+  });
+  return pills;
+}
+
+// ============================================================
+// BOARD
+// ============================================================
+var TILE_ORDER=[0,1,2,3,4,5,6,8,10,12,19,18,23,22,21,20,17,16,15,14,13,11,9,7];
+var LAST_INDEX=TILE_ORDER.length-1;
+var tileClickEnabled=false;
+
+function getTileEl(bi){return document.querySelector('.tile[data-index="'+bi+'"]');}
+
+function moveToken(bi){
+  var el=getTileEl(bi); if(!el) return;
+  // Use rAF so the browser has laid out the game-screen before we measure
+  requestAnimationFrame(function(){
+    var gr=document.getElementById('board-grid').getBoundingClientRect();
+    var tr=el.getBoundingClientRect();
+    var t=document.getElementById('player-token');
+    var sz=36;
+    t.style.left=(tr.left-gr.left+tr.width/2-sz/2)+'px';
+    t.style.top =(tr.top -gr.top +tr.height/2-sz/2)+'px';
+  });
+}
+
+function refreshBoard(){
+  var bi=TILE_ORDER[state.currentIndex%TILE_ORDER.length];
+  document.querySelectorAll('.tile[data-index]').forEach(function(t){
+    var i=parseInt(t.dataset.index),pi=TILE_ORDER.indexOf(i);
+    t.classList.remove('active','done');
+    if(i===bi) t.classList.add('active');
+    else if(pi>=0&&pi<state.currentIndex) t.classList.add('done');
+  });
+  moveToken(bi);
+  tileClickEnabled=true;
+}
+
+// ── No-repeat question picker ──
+var usedQuestions={};
+function pickQuestion(type){
+  var pool=Q[type]; if(!pool) return null;
+  if(!usedQuestions[type]||usedQuestions[type].length>=pool.length) usedQuestions[type]=[];
+  var used=usedQuestions[type],avail=[];
+  for(var i=0;i<pool.length;i++) if(used.indexOf(i)===-1) avail.push(i);
+  var idx=avail[Math.floor(Math.random()*avail.length)];
+  used.push(idx); return pool[idx];
+}
+
+// ── Tile click (delegated) ──
+document.getElementById('board-grid').addEventListener('click',function(e){
+  if(!tileClickEnabled) return;
+  var t=e.target.closest('.tile[data-index]'); if(!t) return;
+  var bi=TILE_ORDER[state.currentIndex%TILE_ORDER.length];
+  if(parseInt(t.dataset.index)!==bi) return;
+  tileClickEnabled=false;
+  var type=t.dataset.type;
+  if(type==='challenge')    openChallenge();
+  else if(type==='crisis')  openCrisis();
+  else                       openEnergyQ(type,t.querySelector('span').textContent);
+});
+
+// ============================================================
+// ENERGY Q
+// ============================================================
+function openEnergyQ(type,label){
+  var q=pickQuestion(type); if(!q) return;
+  showQuestion(label+' Question','Answer correctly to earn +3 EU Counter','',q,function(correct){
+    var delta=correct?{eu:3}:{eu:0};
+    showResult(correct?'correct':'incorrect',correct?'Correct! ✓':'Incorrect ✗',
+      correct?'You earned +3 EU Counter!':'No change to metrics.',deltaStr(delta),function(){
+        if(correct) applyDelta(delta);
+        finishTurn();
+      });
+  });
+}
+
+// ============================================================
+// CHALLENGE
+// ============================================================
+function fmt(n){return(n>=0?'+':'')+n;}
+function openChallenge(){
+  var card=CHALLENGE_CARDS[state.challengeIdx%CHALLENGE_CARDS.length];
+  var canA=state.eu>=card.euCost;
+  document.getElementById('dialog-progress').textContent='DEVELOPMENT CHALLENGE';
+  document.getElementById('dialog-title').textContent=card.name;
+  document.getElementById('dialog-desc').innerHTML='EU Cost: '+card.euCost+(canA?'':' — ⚠️ Not enough EU for Option A');
+  document.getElementById('question-text').textContent='Choose your development strategy:';
+  document.getElementById('question-area').style.display='block';
+  document.getElementById('result-area').style.display='none';
+  var list=document.getElementById('options-list'); list.innerHTML='';
+  [{label:'A — Clean Energy',d:card.optA,disabled:!canA},
+   {label:'B — Fossil Fuels', d:card.optB,disabled:false},
+   {label:'C — Skip',         d:card.optC,disabled:false}
+  ].forEach(function(opt){
+    var b=document.createElement('button'); b.className='option-btn'; b.disabled=opt.disabled;
+    if(opt.disabled) b.style.opacity='0.4';
+    var d=opt.d;
+    b.innerHTML='<span class="option-letter">'+opt.label.charAt(0)+')</span>'+opt.label.slice(2)+
+      ' <small style="color:#6b7280">(Eco '+fmt(d.eco)+' Env '+fmt(d.env)+' Soc '+fmt(d.soc)+')</small>';
+    b.onclick=function(){
+      list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+      var delta={eco:d.eco,env:d.env,soc:d.soc};
+      if(opt.label.startsWith('A')) delta.eu=-card.euCost;
+      applyDelta(delta); state.challengeIdx++;
+      showResult('correct','Choice Made!',opt.label,deltaStr(delta),function(){ finishTurn(); });
+    };
+    list.appendChild(b);
+  });
+  document.getElementById('dialog').classList.add('open');
+  updateCloseBtn();
+  broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+}
+
+// ============================================================
+// CRISIS
+// ============================================================
+function openCrisis(){
+  var card=CRISIS_CARDS[state.crisisIdx%CRISIS_CARDS.length];
+  state.crisisCard=card; state.crisisQIdx=0; state.crisisAllCorrect=true;
+  askCrisisQ();
+}
+function askCrisisQ(){
+  var card=state.crisisCard,qi=state.crisisQIdx,q=card.questions[qi];
+  showQuestion('⚠️ '+card.name,'All three questions must be answered correctly for the reward.',
+    'CRISIS — Question '+(qi+1)+' of 3 — All 3 must be correct!',q,function(correct){
+      if(!correct) state.crisisAllCorrect=false;
+      state.crisisQIdx++;
+      if(state.crisisQIdx<3){
+        showResult(correct?'correct':'incorrect',correct?'✓ Correct!':'✗ Wrong!','Next question coming up…','',function(){ askCrisisQ(); });
+      } else {
+        var allOk=state.crisisAllCorrect;
+        var delta=allOk?card.reward:{eu:card.penalty.eu,eco:card.penalty.eco,env:card.penalty.env,soc:card.penalty.soc};
+        applyDelta(delta); state.crisisIdx++;
+        showResult(allOk?'correct':'incorrect',allOk?'All Correct! Reward Earned ✓':'Penalty Applied ✗',
+          allOk?'All 3 answers correct — reward applied.':'At least one wrong — full penalty applied.',
+          deltaStr(delta),function(){ finishTurn(); });
+      }
+    });
+}
+
+// ============================================================
+// ============================================================
+// DIALOG SNAPSHOT — lets joining / observing players see current question
+// ============================================================
+function getDialogSnapshot(){
+  var inResult = document.getElementById('result-area').style.display !== 'none';
+  var snapshot = {
+    progress: document.getElementById('dialog-progress').textContent,
+    title:    document.getElementById('dialog-title').textContent,
+    desc:     document.getElementById('dialog-desc').innerHTML,
+    inResult: inResult
+  };
+  if(inResult){
+    snapshot.resultClass = document.getElementById('result-box').className;
+    snapshot.resultTitle = document.getElementById('result-title').textContent;
+    snapshot.resultSub   = document.getElementById('result-sub').textContent;
+    snapshot.resultPills = document.getElementById('metric-delta').innerHTML;
+  } else {
+    snapshot.questionText = document.getElementById('question-text').textContent;
+    snapshot.answerIndex  = _currentAnswerIndex; // stored when question is shown
+    var opts = [];
+    document.getElementById('options-list').querySelectorAll('button').forEach(function(b){
+      opts.push(b.innerText.replace(/^[A-Z]\)\s*/,''));
+    });
+    snapshot.options = opts;
+  }
+  return snapshot;
+}
+
+function applyDialogSnapshot(snap){
+  document.getElementById('dialog-progress').textContent = snap.progress;
+  document.getElementById('dialog-title').textContent    = snap.title;
+  document.getElementById('dialog-desc').innerHTML       = snap.desc;
+  if(snap.inResult){
+    document.getElementById('question-area').style.display = 'none';
+    document.getElementById('result-area').style.display   = 'block';
+    document.getElementById('result-box').className        = snap.resultClass;
+    document.getElementById('result-title').textContent    = snap.resultTitle;
+    document.getElementById('result-sub').textContent      = snap.resultSub;
+    document.getElementById('metric-delta').innerHTML      = snap.resultPills;
+    document.getElementById('dialog-close-btn').style.display = 'none';
+    // Allow remote players to press Continue too
+    _continueCb = function(){ finishTurn(); };
+  } else {
+    document.getElementById('question-area').style.display = 'block';
+    document.getElementById('result-area').style.display   = 'none';
+    document.getElementById('question-text').textContent   = snap.questionText;
+    var list = document.getElementById('options-list');
+    list.innerHTML = '';
+    (snap.options||[]).forEach(function(opt,i){
+      var b = document.createElement('button'); b.className = 'option-btn';
+      b.innerHTML = '<span class="option-letter">'+String.fromCharCode(65+i)+')</span>'+opt;
+      // Allow any player to answer
+      b.onclick = function(){
+        list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+        // We don't know the correct answer index from snapshot, so we store it in the snap
+        var isCorrect = (snap.answerIndex !== undefined) ? (i === snap.answerIndex) : null;
+        broadcastAction({ type: 'remote_answer', optionIndex: i });
+        // Show a neutral "answered" result for remote players since they don't know correct answer
+        if(isCorrect !== null){
+          var delta = isCorrect ? {eu:3} : {};
+          if(isCorrect) applyDelta(delta);
+          showResult(isCorrect?'correct':'incorrect', isCorrect?'Correct! ✓':'Incorrect ✗',
+            isCorrect?'You earned +3 EU Counter!':'No change to metrics.', deltaStr(delta), function(){ finishTurn(); });
+        }
+      };
+      list.appendChild(b);
+    });
+    document.getElementById('dialog-close-btn').style.display = 'flex';
+    updateCloseBtn();
+  }
+}
+
+// DIALOG HELPERS
+// ============================================================
+var _answerCb=null,_continueCb=null,_currentAnswerIndex=null;
+function showQuestion(title,desc,progress,q,onAnswer){
+  _answerCb=onAnswer;
+  _currentAnswerIndex=q.a; // store for snapshot
+  document.getElementById('dialog-progress').textContent=progress;
+  document.getElementById('dialog-title').textContent=title;
+  document.getElementById('dialog-desc').textContent=desc;
+  document.getElementById('question-text').textContent=q.q;
+  document.getElementById('question-area').style.display='block';
+  document.getElementById('result-area').style.display='none';
+  var list=document.getElementById('options-list'); list.innerHTML='';
+  q.opts.forEach(function(opt,i){
+    var b=document.createElement('button'); b.className='option-btn';
+    b.innerHTML='<span class="option-letter">'+String.fromCharCode(65+i)+')</span>'+opt;
+    b.onclick=function(){ list.querySelectorAll('button').forEach(function(x){x.disabled=true;}); _answerCb(i===q.a); };
+    list.appendChild(b);
+  });
+  document.getElementById('dialog').classList.add('open');
+  updateCloseBtn();
+  broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+}
+function showResult(cls,title,sub,pills,onContinueCb){
+  _continueCb=onContinueCb;
+  document.getElementById('question-area').style.display='none';
+  document.getElementById('result-box').className='result-box '+cls;
+  document.getElementById('result-title').textContent=title;
+  document.getElementById('result-sub').textContent=sub;
+  document.getElementById('metric-delta').innerHTML=pills;
+  document.getElementById('result-area').style.display='block';
+  updateCloseBtn();
+  // Sync result view to other players
+  broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+}
+function onContinue(){
+  if(_continueCb){
+    var cb=_continueCb; _continueCb=null;
+    broadcastAction({ type: 'remote_continue' });
+    cb();
+  }
+}
+
+// ============================================================
+// FINISH TURN
+// ============================================================
+function finishTurn(){
+  document.getElementById('dialog').classList.remove('open');
+  broadcastAction({ type: 'dialog_close' }); // close dialog for all other players
+  syncState(); // broadcast to other players
+  if(state.currentIndex>=LAST_INDEX){
+    setTimeout(showEndGame,400);
+  } else {
+    state.currentIndex=Math.min(state.currentIndex+1,LAST_INDEX);
+    syncState();
+    setTimeout(refreshBoard,300);
+  }
+}
+
+// ============================================================
+// END GAME
+// ============================================================
+function showEndGame(isRemote){
+  var eco=state.eco,env=state.env,soc=state.soc,eu=state.eu;
+  var allAbove40=eco>=40&&env>=40&&soc>=40;
+  var allAbove30=eco>=30&&env>=30&&soc>=30;
+  var icon,title,sub,cls;
+  if(allAbove40){icon='🏆';title='Full Victory!';sub='Society is confidently moving towards full clean energy. The future is bright!';cls='endgame--win';}
+  else if(allAbove30){icon='⚡';title='Partial Victory';sub='Players managed to stay on course — though just one step from defeat. Keep pushing!';cls='endgame--partial';}
+  else{icon='💔';title='Defeat';sub='Players failed to maintain stability in society. The energy transition collapsed.';cls='endgame--loss';}
+  document.getElementById('endgame').querySelector('.endgame-box').className='endgame-box '+cls;
+  document.getElementById('endgame-icon').textContent=icon;
+  document.getElementById('endgame-title').textContent=title;
+  document.getElementById('endgame-sub').textContent=sub;
+  function sr(label,value,t40,t30){
+    var st=value>=t40?'✅':value>=t30?'⚠️':'❌';
+    return '<div class="score-row"><span class="score-label">'+label+'</span><span class="score-bar-wrap"><span class="score-bar" style="width:'+Math.round(value/50*100)+'%"></span></span><span class="score-num">'+value+' / 50 '+st+'</span></div>';
+  }
+  document.getElementById('endgame-scores').innerHTML=
+    sr('💰 Economy',eco,40,30)+sr('🌿 Environment',env,40,30)+sr('👥 Society',soc,40,30)+
+    '<div class="score-row"><span class="score-label">⚡ EU Counter</span><span class="score-bar-wrap"><span class="score-bar score-bar--eu" style="width:'+Math.round(eu/50*100)+'%"></span></span><span class="score-num">'+eu+' / 50</span></div>';
+  document.getElementById('endgame').style.display='flex';
+  // Populate chat log for endgame screen
+  var chatMsgs = document.getElementById('chat-messages');
+  var logEl = document.getElementById('endgame-chat-log');
+  var entries = chatMsgs.querySelectorAll('.chat-msg');
+  if(entries.length === 0){
+    document.getElementById('endgame-chat-toggle').style.display = 'none';
+  } else {
+    document.getElementById('endgame-chat-toggle').style.display = '';
+    logEl.innerHTML = '';
+    entries.forEach(function(msg){
+      var author = msg.querySelector('.chat-msg-author').textContent;
+      var text   = msg.querySelector('.chat-msg-text').textContent;
+      var div = document.createElement('div');
+      div.className = 'endgame-chat-entry';
+      div.innerHTML = '<strong>'+escapeHtml(author)+':</strong> '+escapeHtml(text);
+      logEl.appendChild(div);
+    });
+  }
+  // Only the initiating player broadcasts game_over (avoids re-broadcast loop)
+  if(!isRemote) broadcastAction({type:'game_over'});
+}
+
+// ============================================================
+// RESTART / MENU
+// ============================================================
+function restartGame(){
+  broadcastAction({type:'restart'});
+  applyRestart();
+  // Sync the fresh state so all players are guaranteed to be in sync
+  syncState();
+}
+function applyRestart(silent){
+  state={eco:25,env:25,soc:25,eu:0,currentIndex:0,challengeIdx:0,crisisIdx:0,crisisCard:null,crisisQIdx:0,crisisAllCorrect:true};
+  usedQuestions={};
+  tileClickEnabled=false;
+  _answerCb=null;
+  _continueCb=null;
+  _currentAnswerIndex=null;
+  updateSliders();
+  document.getElementById('endgame').style.display='none';
+  document.getElementById('dialog').classList.remove('open');
+  document.getElementById('endgame-chat-log').classList.remove('open');
+  document.querySelectorAll('.tile[data-index]').forEach(function(t){t.classList.remove('active','done');});
+  if(!silent) refreshBoard();
+}
+
+function toggleEndgameChatLog(){
+  var log = document.getElementById('endgame-chat-log');
+  var btn = document.getElementById('endgame-chat-toggle');
+  var isOpen = log.classList.toggle('open');
+  btn.textContent = isOpen ? '💬 Hide Chat Log' : '💬 Show Chat Log';
+}
+
+// ============================================================
+// DIALOG CLOSE (synced) — any player can close
+// ============================================================
+function closeDialog(){
+  // Only allow closing when the question area is visible (not mid-result)
+  if(document.getElementById('result-area').style.display !== 'none') return;
+  document.getElementById('dialog').classList.remove('open');
+  tileClickEnabled = true;
+  _answerCb = null;
+  _continueCb = null;
+  _currentAnswerIndex = null;
+  broadcastAction({ type: 'dialog_close' });
+}
+
+// Show/hide close button depending on whether we're in question or result phase
+function updateCloseBtn(){
+  var btn = document.getElementById('dialog-close-btn');
+  var inResult = document.getElementById('result-area').style.display !== 'none';
+  btn.style.display = inResult ? 'none' : 'flex';
+}
+
+// ============================================================
+// CHAT
+// ============================================================
+var chatCollapsed = true;
+
+function toggleChat(){
+  chatCollapsed = !chatCollapsed;
+  var panel = document.getElementById('chat-panel');
+  panel.classList.toggle('collapsed', chatCollapsed);
+  panel.classList.toggle('expanded',  !chatCollapsed);
+  if(!chatCollapsed){
+    // clear unread indicator
+    document.getElementById('chat-unread').classList.remove('visible');
+    // scroll to bottom
+    var msgs = document.getElementById('chat-messages');
+    msgs.scrollTop = msgs.scrollHeight;
+    document.getElementById('chat-input').focus();
+  }
+}
+
+function sendChat(){
+  var inp = document.getElementById('chat-input');
+  var text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  appendChatMessage(myName, text, true);
+  broadcastAction({ type: 'chat_message', author: myName, text: text });
+}
+
+function appendChatMessage(author, text, isMine){
+  var msgs = document.getElementById('chat-messages');
+  var div = document.createElement('div');
+  div.className = 'chat-msg' + (isMine ? ' mine' : '');
+  div.innerHTML =
+    '<span class="chat-msg-author'+(isMine?' me':'')+'">'+
+      escapeHtml(author)+
+    '</span>'+
+    '<span class="chat-msg-text">'+escapeHtml(text)+'</span>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Show unread dot if chat is collapsed and message is from someone else
+  if(!isMine && chatCollapsed){
+    document.getElementById('chat-unread').classList.add('visible');
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================================================
+// INIT — watch lobby immediately, game starts only after joinGame()
+// ============================================================
+initSupabase();
+initLobbyWatcher();
+</script>
+</body>
+</html>
