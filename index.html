@@ -5,74 +5,191 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Grid Guardians – Energy Crisis</title>
   <link rel="stylesheet" href="figma_css.css"/>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Exo+2:wght@400;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     /* ── MENU SCREEN ── */
     .menu-screen {
       position: fixed; inset: 0; z-index: 1000;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      background: radial-gradient(ellipse at 50% 30%, #1a3d0a 0%, #0a1f05 100%);
+      background: #050d1a;
       gap: 28px; padding: 24px;
       background-image:
-        radial-gradient(ellipse at 50% 30%, #1a3d0a 0%, #0a1f05 100%),
-        repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.015) 10px, rgba(255,255,255,0.015) 11px);
+        radial-gradient(ellipse at 30% 20%, rgba(0,80,200,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(0,150,255,0.08) 0%, transparent 50%),
+        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(0,100,255,0.02) 40px, rgba(0,100,255,0.02) 41px),
+        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(0,100,255,0.02) 40px, rgba(0,100,255,0.02) 41px);
     }
     .menu-screen.hidden { display: none; }
 
-    .menu-logo {
-      width: min(460px, 88vw);
-      filter: drop-shadow(0 0 40px rgba(212,160,23,0.45));
-      animation: logoFloat 3s ease-in-out infinite;
+    /* Animated background particles for menu */
+    .menu-screen::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(0,200,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 10%, rgba(0,200,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 60%, rgba(0,150,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 10% 70%, rgba(0,200,255,0.25) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 50%, rgba(0,200,255,0.25) 0%, transparent 100%),
+        radial-gradient(2px 2px at 60% 85%, rgba(0,180,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 90%, rgba(0,200,255,0.2) 0%, transparent 100%);
+      pointer-events: none;
+      animation: particleDrift 8s ease-in-out infinite alternate;
     }
-    @keyframes logoFloat {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-7px); }
+    @keyframes particleDrift {
+      from { transform: translateY(0); opacity: 0.7; }
+      to   { transform: translateY(-20px); opacity: 1; }
     }
 
+    /* Horizontal scan line sweep */
+    .menu-screen::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0,150,255,0.03) 50%, transparent 100%);
+      animation: scanLine 4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes scanLine {
+      0%   { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+
+    /* ── LOGO ── */
+    .menu-logo-wrap {
+      position: relative;
+      z-index: 1;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .menu-logo {
+      width: min(860px, 98vw);
+      max-height: 200px;
+      object-fit: contain;
+      filter:
+        drop-shadow(0 0 35px rgba(0,180,255,0.5))
+        drop-shadow(0 0 70px rgba(0,100,200,0.3))
+        drop-shadow(0 4px 12px rgba(0,0,0,0.6));
+      animation: logoFloat 3.5s ease-in-out infinite;
+      transition: filter 0.15s, transform 0.1s;
+      display: block;
+    }
+    .menu-logo-wrap:active .menu-logo {
+      filter:
+        drop-shadow(0 0 20px rgba(0,150,255,0.5))
+        drop-shadow(0 0 40px rgba(0,80,180,0.4))
+        brightness(0.85);
+      transform: scale(0.96);
+    }
+    @keyframes logoFloat {
+      0%,100% { transform: translateY(0) rotate(0deg); }
+      33%      { transform: translateY(-8px) rotate(0.3deg); }
+      66%      { transform: translateY(-4px) rotate(-0.3deg); }
+    }
+
+    /* Fallback text if logo fails */
+    #menu-title-fallback {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(22px, 5vw, 38px);
+      font-weight: 900;
+      color: #c8e8ff;
+      text-align: center;
+      text-shadow: 0 0 30px rgba(0,180,255,0.7), 0 0 60px rgba(0,100,200,0.4);
+      letter-spacing: 0.05em;
+      z-index: 1;
+    }
+
+    /* ── MENU CARD ── */
     .menu-card {
-      background: var(--parchment, #fdf6e3);
-      border: 4px solid var(--card-wood, #c8a96e);
-      border-radius: 18px;
+      background: rgba(7,20,40,0.92);
+      border: 1px solid rgba(0,120,200,0.35);
+      border-radius: 16px;
       padding: 28px 32px;
       width: min(400px, 92vw);
       display: flex; flex-direction: column; gap: 14px;
       box-shadow:
-        0 0 0 2px var(--card-border, #6b4c1e),
-        0 20px 60px rgba(0,0,0,0.6),
-        inset 0 1px 0 rgba(255,255,255,0.9);
+        0 0 0 1px rgba(0,80,160,0.2),
+        0 0 30px rgba(0,100,200,0.15),
+        0 20px 60px rgba(0,0,0,0.7),
+        inset 0 1px 0 rgba(0,144,255,0.08);
+      position: relative;
+      z-index: 1;
+      backdrop-filter: blur(10px);
     }
+    /* Corner accents on card */
+    .menu-card::before, .menu-card::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      border-color: rgba(0,200,255,0.5);
+      border-style: solid;
+    }
+    .menu-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
+    .menu-card::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 3px 0; }
+
     .menu-label {
-      font-family: 'Cinzel', serif;
-      font-size: 11px; font-weight: 600;
-      color: var(--ink-light, #5a3e28);
-      letter-spacing: 0.1em; text-transform: uppercase;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700;
+      color: rgba(0,200,255,0.7);
+      letter-spacing: 0.15em; text-transform: uppercase;
     }
     .menu-input {
       width: 100%; padding: 12px 14px;
-      background: #fffdf5;
-      border: 2px solid var(--card-wood, #c8a96e);
-      border-radius: 10px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 15px; font-weight: 600; color: var(--ink, #2c1a0e);
+      background: rgba(0,20,50,0.8);
+      border: 1px solid rgba(0,120,200,0.4);
+      border-radius: 8px;
+      font-family: 'Exo 2', sans-serif;
+      font-size: 15px; font-weight: 600; color: #c8e8ff;
       outline: none; transition: border-color .2s, box-shadow .2s;
     }
-    .menu-input::placeholder { color: rgba(44,26,14,0.35); }
-    .menu-input:focus { border-color: var(--accent-gold, #d4a017); box-shadow: 0 0 0 3px rgba(212,160,23,0.2); }
+    .menu-input::placeholder { color: rgba(100,180,220,0.35); }
+    .menu-input:focus { border-color: rgba(0,200,255,0.7); box-shadow: 0 0 0 3px rgba(0,144,255,0.15), 0 0 20px rgba(0,144,255,0.1); }
 
     .menu-btn {
-      padding: 14px; border-radius: 11px;
-      border: none;
-      background: linear-gradient(135deg, var(--card-wood, #c8a96e), var(--card-wood-dark, #a0804a));
-      color: #fff; font-family: 'Cinzel', serif;
-      font-size: 15px; font-weight: 700; cursor: pointer;
-      transition: opacity .2s, transform .15s;
-      letter-spacing: 0.05em;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.25);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      padding: 14px; border-radius: 9px;
+      border: 1px solid rgba(0,200,255,0.4);
+      background: linear-gradient(135deg, rgba(0,80,160,0.9), rgba(0,40,100,0.9));
+      color: #00e5ff; font-family: 'Orbitron', monospace;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      letter-spacing: 0.08em;
+      box-shadow: 0 0 15px rgba(0,144,255,0.2), inset 0 1px 0 rgba(0,200,255,0.1);
+      text-shadow: 0 0 8px rgba(0,200,255,0.7);
+      position: relative;
+      overflow: hidden;
     }
-    .menu-btn:hover { opacity: 0.9; transform: translateY(-2px); }
-    .menu-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+    .menu-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0,200,255,0.08), transparent);
+      transition: left 0.4s;
+    }
+    .menu-btn:hover::before { left: 100%; }
+    .menu-btn:hover { opacity: 0.92; transform: translateY(-2px); box-shadow: 0 0 25px rgba(0,144,255,0.4), inset 0 1px 0 rgba(0,200,255,0.15); }
+    .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+    /* How to Play button — secondary style */
+    .menu-btn-secondary {
+      padding: 11px 14px; border-radius: 9px;
+      border: 1px solid rgba(0,150,200,0.25);
+      background: rgba(0,30,60,0.6);
+      color: #7ec8e3; font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700; cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s, border-color .2s;
+      letter-spacing: 0.08em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      text-shadow: 0 0 6px rgba(0,180,220,0.4);
+    }
+    .menu-btn-secondary:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      border-color: rgba(0,200,255,0.4);
+      box-shadow: 0 0 15px rgba(0,100,180,0.2);
+      color: #a8dcf0;
+    }
 
     .menu-players {
       display: flex; flex-wrap: wrap; gap: 8px;
@@ -80,15 +197,14 @@
     }
     .player-badge {
       padding: 4px 12px; border-radius: 9999px;
-      background: rgba(212,160,23,0.15);
-      border: 1px solid rgba(212,160,23,0.5);
-      color: var(--ink-light, #5a3e28); font-size: 13px; font-weight: 700;
-      font-family: 'Nunito', sans-serif;
+      background: rgba(0,100,200,0.15);
+      border: 1px solid rgba(0,150,255,0.3);
+      color: #7ec8e3; font-size: 13px; font-weight: 700;
+      font-family: 'Exo 2', sans-serif;
     }
     .menu-status {
-      font-size: 12px; color: var(--ink-light, #5a3e28);
-      font-family: 'Nunito', sans-serif; text-align: center;
-      opacity: 0.6;
+      font-size: 12px; color: rgba(100,180,220,0.55);
+      font-family: 'Exo 2', sans-serif; text-align: center;
     }
 
     /* ── PLAYER LIST IN GAME ── */
@@ -98,15 +214,15 @@
     }
     .player-chip {
       padding: 4px 12px; border-radius: 9999px;
-      background: rgba(200,169,110,0.2);
-      border: 1px solid rgba(200,169,110,0.5);
-      color: var(--parchment, #fdf6e3); font-size: 12px; font-weight: 700;
-      font-family: 'Nunito', sans-serif;
+      background: rgba(0,80,160,0.2);
+      border: 1px solid rgba(0,120,200,0.4);
+      color: #7ec8e3; font-size: 12px; font-weight: 700;
+      font-family: 'Exo 2', sans-serif;
     }
     .player-chip.me {
-      background: rgba(212,160,23,0.3);
-      border-color: var(--accent-gold, #d4a017);
-      color: var(--accent-gold-light, #f0c040);
+      background: rgba(0,144,255,0.2);
+      border-color: #00d4ff;
+      color: #00e5ff;
     }
 
     /* ── ENDGAME TWO BUTTONS ── */
@@ -115,52 +231,81 @@
     }
     .endgame-btn {
       flex: 1; padding: 13px;
-      border: none; border-radius: 11px;
-      font-family: 'Cinzel', serif;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-      transition: opacity .15s, transform .1s;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      border-radius: 9px;
+      font-family: 'Orbitron', monospace;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: opacity .15s, transform .1s, box-shadow .15s;
+      letter-spacing: 0.06em;
     }
     .endgame-btn:hover { opacity: 0.88; transform: translateY(-2px); }
-    .endgame-btn--restart { background: linear-gradient(135deg, #c8a96e, #a0804a); color: #fff; }
-    .endgame-btn--menu    { background: linear-gradient(135deg, #2d5a1b, #1e4010); color: #fff; }
+    .endgame-btn--restart {
+      background: linear-gradient(135deg, rgba(0,80,160,0.9), rgba(0,40,100,0.9));
+      color: #00e5ff;
+      border: 1px solid rgba(0,200,255,0.4);
+      box-shadow: 0 0 15px rgba(0,144,255,0.2);
+      text-shadow: 0 0 8px rgba(0,200,255,0.7);
+    }
+    .endgame-btn--menu {
+      background: rgba(0,20,50,0.8);
+      color: #7ec8e3;
+      border: 1px solid rgba(0,120,200,0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
 
-    /* Override single restart button (hide old one) */
+    /* Override single restart button */
     .endgame-restart { display: none !important; }
+
+    /* ── DIALOG TYPE THEMING ── */
+    .dialog-box.type--solar    { border-color: rgba(232,138,0,0.5); background-image: linear-gradient(135deg, rgba(232,138,0,0.06) 0%, transparent 55%); }
+    .dialog-box.type--wind     { border-color: rgba(40,160,255,0.5); background-image: linear-gradient(135deg, rgba(40,160,255,0.06) 0%, transparent 55%); }
+    .dialog-box.type--nuclear  { border-color: rgba(0,200,220,0.5); background-image: linear-gradient(135deg, rgba(0,200,220,0.06) 0%, transparent 55%); }
+    .dialog-box.type--geo      { border-color: rgba(220,100,30,0.5); background-image: linear-gradient(135deg, rgba(220,100,30,0.06) 0%, transparent 55%); }
+    .dialog-box.type--bio      { border-color: rgba(40,200,100,0.5); background-image: linear-gradient(135deg, rgba(40,200,100,0.06) 0%, transparent 55%); }
+    .dialog-box.type--challenge{ border-color: rgba(160,80,255,0.5); background-image: linear-gradient(135deg, rgba(140,60,240,0.08) 0%, transparent 55%); }
+    .dialog-box.type--crisis   { border-color: rgba(255,60,80,0.5); background-image: linear-gradient(135deg, rgba(255,40,60,0.07) 0%, transparent 55%); }
+
+    .dialog-box.type--solar    .dialog-progress { color: #ffaa30; border-color: rgba(232,138,0,0.4); background: rgba(232,138,0,0.1); }
+    .dialog-box.type--wind     .dialog-progress { color: #5ab8ff; border-color: rgba(40,160,255,0.4); background: rgba(40,160,255,0.1); }
+    .dialog-box.type--nuclear  .dialog-progress { color: #00d4e0; border-color: rgba(0,200,220,0.4); background: rgba(0,200,220,0.1); }
+    .dialog-box.type--geo      .dialog-progress { color: #ff8844; border-color: rgba(220,100,30,0.4); background: rgba(220,100,30,0.1); }
+    .dialog-box.type--bio      .dialog-progress { color: #40e080; border-color: rgba(40,200,100,0.4); background: rgba(40,200,100,0.1); }
+    .dialog-box.type--challenge .dialog-progress{ color: #cc88ff; border-color: rgba(160,80,255,0.4); background: rgba(140,60,240,0.12); }
+    .dialog-box.type--crisis   .dialog-progress { color: #ff6680; border-color: rgba(255,60,80,0.4); background: rgba(255,40,60,0.1); }
 
     /* ── DIALOG CLOSE BUTTON ── */
     .dialog-close-btn {
       position: absolute; top: 12px; right: 12px;
       width: 30px; height: 30px;
-      border: 2px solid var(--card-wood, #c8a96e);
+      border: 1px solid rgba(0,120,200,0.4);
       border-radius: 50%;
-      background: var(--parchment-dark, #f0e4c0);
-      color: var(--ink, #2c1a0e);
+      background: rgba(0,30,70,0.9);
+      color: #7ec8e3;
       font-size: 14px; line-height: 1;
       cursor: pointer; display: flex;
       align-items: center; justify-content: center;
-      transition: background .15s, transform .1s;
+      transition: background .15s, transform .1s, border-color .15s;
       font-family: inherit;
       font-weight: 700;
     }
-    .dialog-close-btn:hover { background: #e8d5b0; transform: scale(1.1); }
+    .dialog-close-btn:hover { background: rgba(0,80,160,0.7); transform: scale(1.1); border-color: rgba(0,200,255,0.5); }
     .dialog-box { position: relative; }
 
-    /* ── CHAT PANEL — always on top, even above dialog ── */
+    /* ── CHAT PANEL ── */
     .chat-panel {
       position: fixed;
       bottom: 14px; right: 14px;
       width: 250px;
-      background: var(--parchment, #fdf6e3);
-      border-radius: 14px;
-      border: 3px solid var(--card-wood, #c8a96e);
+      background: rgba(7,20,40,0.95);
+      border-radius: 12px;
+      border: 1px solid rgba(0,100,200,0.35);
       box-shadow:
-        0 0 0 1px var(--card-border, #6b4c1e),
-        0 8px 28px rgba(0,0,0,0.35);
+        0 0 20px rgba(0,80,180,0.15),
+        0 8px 28px rgba(0,0,0,0.6);
       display: flex; flex-direction: column;
-      z-index: 150; /* above dialog overlay (100) */
+      z-index: 150;
       overflow: hidden;
       transition: height .22s ease;
+      backdrop-filter: blur(8px);
     }
     .chat-panel.collapsed { height: 42px; }
     .chat-panel.expanded  { height: 260px; }
@@ -168,14 +313,15 @@
     .chat-header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 9px 12px;
-      background: linear-gradient(135deg, var(--card-wood, #c8a96e), var(--card-wood-dark, #a0804a));
-      color: #fff;
+      background: linear-gradient(135deg, rgba(0,60,130,0.9), rgba(0,30,80,0.9));
+      color: #7ec8e3;
       cursor: pointer; flex-shrink: 0;
       border-radius: 10px 10px 0 0;
-      font-family: 'Cinzel', serif;
-      font-size: 12px; font-weight: 700;
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700;
       user-select: none;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+      border-bottom: 1px solid rgba(0,100,200,0.3);
+      letter-spacing: 0.05em;
     }
     .chat-header-title { display: flex; align-items: center; gap: 6px; }
     .chat-toggle-icon { font-size: 9px; transition: transform .2s; }
@@ -186,90 +332,218 @@
       padding: 8px 10px;
       display: flex; flex-direction: column; gap: 5px;
       font-size: 12px;
-      background: var(--parchment, #fdf6e3);
+      background: rgba(5,15,30,0.8);
     }
     .chat-msg { display: flex; flex-direction: column; }
     .chat-msg-author {
       font-weight: 700; font-size: 10px;
-      color: var(--ink-light, #5a3e28); font-family: 'Nunito', sans-serif;
+      color: #5a9fbf; font-family: 'Exo 2', sans-serif;
       margin-bottom: 1px;
     }
-    .chat-msg-author.me { color: #6d28d9; }
+    .chat-msg-author.me { color: #00d4ff; }
     .chat-msg-text {
-      background: #f0e4c0; color: var(--ink, #2c1a0e);
+      background: rgba(0,40,90,0.7); color: #c8e8ff;
       border-radius: 0 8px 8px 8px;
       padding: 5px 8px;
-      font-family: 'Nunito', sans-serif;
+      font-family: 'Exo 2', sans-serif;
       line-height: 1.35; word-break: break-word;
       font-size: 12px;
-      border: 1px solid rgba(200,169,110,0.4);
+      border: 1px solid rgba(0,100,200,0.25);
     }
     .chat-msg.mine .chat-msg-text {
-      background: #e8d5f0; border-radius: 8px 8px 0 8px;
-      border-color: rgba(139,92,246,0.3);
+      background: rgba(0,80,160,0.5); border-radius: 8px 8px 0 8px;
+      border-color: rgba(0,200,255,0.2);
     }
     .chat-msg.mine { align-items: flex-end; }
 
     .chat-input-row {
       display: flex; gap: 5px;
       padding: 6px 8px;
-      border-top: 2px solid var(--card-wood, #c8a96e);
+      border-top: 1px solid rgba(0,100,200,0.25);
       flex-shrink: 0;
-      background: var(--parchment-dark, #f0e4c0);
+      background: rgba(0,15,35,0.9);
     }
     .chat-input {
       flex: 1; padding: 5px 8px;
-      border: 1.5px solid var(--card-wood, #c8a96e); border-radius: 8px;
-      font-family: 'Nunito', sans-serif; font-size: 12px;
-      color: var(--ink, #2c1a0e); outline: none;
+      border: 1px solid rgba(0,100,200,0.3); border-radius: 6px;
+      font-family: 'Exo 2', sans-serif; font-size: 12px;
+      color: #c8e8ff; outline: none;
       transition: border-color .15s;
-      background: #fffdf5;
+      background: rgba(0,20,50,0.8);
     }
-    .chat-input:focus { border-color: var(--accent-gold, #d4a017); }
+    .chat-input::placeholder { color: rgba(100,180,220,0.3); }
+    .chat-input:focus { border-color: rgba(0,200,255,0.5); }
     .chat-send-btn {
       padding: 5px 9px;
-      background: linear-gradient(135deg, var(--card-wood, #c8a96e), var(--card-wood-dark, #a0804a));
-      color: #fff;
-      border: none; border-radius: 8px;
-      font-family: 'Cinzel', serif;
-      font-size: 11px; font-weight: 700;
+      background: linear-gradient(135deg, rgba(0,60,130,0.9), rgba(0,30,80,0.9));
+      color: #00d4ff;
+      border: 1px solid rgba(0,150,255,0.3); border-radius: 6px;
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700;
       cursor: pointer; transition: opacity .15s;
       flex-shrink: 0;
     }
     .chat-send-btn:hover { opacity: 0.85; }
+
     .chat-unread-dot {
       width: 7px; height: 7px; border-radius: 50%;
-      background: #ef4444; display: none;
+      background: #ff4466; display: none;
       flex-shrink: 0;
+      box-shadow: 0 0 6px rgba(255,50,100,0.7);
     }
     .chat-unread-dot.visible { display: inline-block; }
 
     /* ── ENDGAME CHAT LOG ── */
     .endgame-chat-toggle {
-      background: none; border: 2px solid var(--card-wood, #c8a96e);
-      border-radius: 9px; padding: 7px 16px;
-      font-family: 'Nunito', sans-serif;
-      font-size: 13px; font-weight: 700; color: var(--ink-light, #5a3e28);
+      background: none; border: 1px solid rgba(0,120,200,0.3);
+      border-radius: 8px; padding: 7px 16px;
+      font-family: 'Exo 2', sans-serif;
+      font-size: 13px; font-weight: 700; color: #7ec8e3;
       cursor: pointer; transition: border-color .15s, background .15s;
       width: 100%;
     }
-    .endgame-chat-toggle:hover { border-color: var(--accent-gold, #d4a017); background: #fffbe8; }
+    .endgame-chat-toggle:hover { border-color: rgba(0,200,255,0.4); background: rgba(0,50,100,0.3); }
     .endgame-chat-log {
       display: none;
       width: 100%;
       max-height: 160px;
       overflow-y: auto;
-      background: #fffdf5;
-      border: 2px solid var(--card-wood, #c8a96e);
-      border-radius: 10px;
+      background: rgba(0,15,35,0.8);
+      border: 1px solid rgba(0,100,200,0.25);
+      border-radius: 8px;
       padding: 10px 12px;
       flex-direction: column;
       gap: 5px;
       text-align: left;
     }
     .endgame-chat-log.open { display: flex; }
-    .endgame-chat-entry { font-size: 12px; font-family: 'Nunito', sans-serif; color: var(--ink-light, #5a3e28); }
-    .endgame-chat-entry strong { color: var(--ink, #2c1a0e); }
+    .endgame-chat-entry { font-size: 12px; font-family: 'Exo 2', sans-serif; color: #7ec8e3; }
+    .endgame-chat-entry strong { color: #c8e8ff; }
+
+    /* ── HOW TO PLAY MODAL ── */
+    .htp-overlay {
+      display: none;
+      position: fixed; inset: 0; z-index: 2500;
+      background: rgba(0,5,15,0.88);
+      align-items: center; justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(8px);
+    }
+    .htp-overlay.open { display: flex; }
+
+    .htp-box {
+      background: rgba(7,20,40,0.97);
+      border: 1px solid rgba(0,120,200,0.4);
+      border-radius: 18px;
+      padding: 32px 28px 28px;
+      max-width: 580px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow:
+        0 0 0 1px rgba(0,80,160,0.2),
+        0 0 50px rgba(0,100,200,0.2),
+        0 24px 64px rgba(0,0,0,0.8);
+      display: flex; flex-direction: column; gap: 20px;
+      position: relative;
+      animation: cardFlip 0.3s ease;
+    }
+    @keyframes cardFlip {
+      from { opacity:0; transform:scale(0.92) translateY(16px); }
+      to   { opacity:1; transform:scale(1) translateY(0); }
+    }
+
+    /* corner accents */
+    .htp-box::before, .htp-box::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-color: rgba(0,200,255,0.4);
+      border-style: solid;
+    }
+    .htp-box::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+    .htp-box::after  { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+
+    .htp-close {
+      position: absolute; top: 14px; right: 14px;
+      width: 32px; height: 32px;
+      border: 1px solid rgba(0,120,200,0.4);
+      border-radius: 50%;
+      background: rgba(0,30,70,0.9);
+      color: #7ec8e3; font-size: 15px;
+      cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+      transition: background .15s, transform .1s, border-color .15s;
+      font-family: inherit; font-weight: 700;
+      line-height: 1;
+    }
+    .htp-close:hover { background: rgba(0,80,160,0.7); transform: scale(1.1); border-color: rgba(0,200,255,0.5); }
+
+    .htp-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(16px, 4vw, 20px);
+      font-weight: 800; color: #c8e8ff;
+      text-shadow: 0 0 15px rgba(0,200,255,0.4);
+      letter-spacing: 0.05em;
+      text-align: center;
+      padding-right: 36px;
+    }
+    .htp-divider {
+      width: 100%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0,150,255,0.4), transparent);
+      margin: -6px 0;
+    }
+
+    .htp-section-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 11px; font-weight: 700;
+      color: #00d4ff;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .htp-text {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 14px; color: #a0c8e0; line-height: 1.6;
+    }
+    .htp-tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .htp-tile-item {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,20,50,0.7);
+      border: 1px solid rgba(0,100,200,0.2);
+      border-radius: 8px;
+      padding: 7px 10px;
+    }
+    .htp-tile-dot {
+      width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+    }
+    .htp-tile-label {
+      font-family: 'Exo 2', sans-serif;
+      font-size: 12px; font-weight: 600; color: #c8e8ff;
+    }
+    .htp-metric-list { display: flex; flex-direction: column; gap: 6px; }
+    .htp-metric-row {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Exo 2', sans-serif; font-size: 13px; color: #a0c8e0;
+    }
+    .htp-metric-icon { width: 22px; text-align: center; flex-shrink: 0; }
+    .htp-metric-name { font-weight: 700; min-width: 90px; }
+    .htp-ok-btn {
+      padding: 13px; border-radius: 9px;
+      border: 1px solid rgba(0,200,255,0.4);
+      background: linear-gradient(135deg, rgba(0,80,160,0.9), rgba(0,40,100,0.9));
+      color: #00e5ff; font-family: 'Orbitron', monospace;
+      font-size: 12px; font-weight: 700; cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      letter-spacing: 0.08em;
+      box-shadow: 0 0 15px rgba(0,144,255,0.2);
+      text-shadow: 0 0 8px rgba(0,200,255,0.7);
+      width: 100%;
+    }
+    .htp-ok-btn:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 0 25px rgba(0,144,255,0.35); }
 
     /* ── MOBILE RESPONSIVE ── */
     @media (max-width: 500px) {
@@ -278,18 +552,30 @@
         right: 14px; left: 14px;
       }
       .chat-panel.expanded { height: 220px; }
-      .endgame-box { padding: 24px 18px; }
-      .endgame-title { font-size: 20px; }
-      .score-label { width: 100px; font-size: 11px; }
-      .score-num { width: 70px; font-size: 11px; }
-      .dialog-box { padding: 20px 16px; }
-      .dialog-title { font-size: 15px; }
-      .question-text { font-size: 14px; }
-      .option-btn { padding: 10px 12px; font-size: 13px; }
+      .endgame-box { padding: 20px 14px; }
+      .endgame-title { font-size: 18px; }
+      .score-label { width: 90px; font-size: 10px; }
+      .score-num { width: 60px; font-size: 10px; }
+      .dialog-box { padding: 18px 14px; max-height: 95vh; }
+      .dialog-title { font-size: 14px; }
+      .question-text { font-size: 13px; }
+      .option-btn { padding: 9px 11px; font-size: 12px; }
       .endgame-actions { flex-direction: column; }
+      .htp-box { padding: 24px 14px 18px; }
+      .htp-tile-grid { grid-template-columns: repeat(2, 1fr); }
+      .menu-card { padding: 18px 16px; width: min(360px, 94vw); }
+      .menu-logo { max-height: 150px; }
+      .menu-screen { gap: 20px; padding: 16px; }
+      .menu-btn { padding: 13px; font-size: 12px; }
+      .result-title { font-size: 17px; }
+      .continue-btn { font-size: 13px; padding: 12px; }
     }
     @media (max-width: 380px) {
-      .menu-card { padding: 20px 18px; }
+      .menu-card { padding: 16px 12px; }
+      .menu-logo { max-height: 120px; }
+      .dialog-box { padding: 14px 10px; }
+      .option-btn { padding: 8px 10px; font-size: 11px; }
+      .htp-box { padding: 20px 11px 16px; }
     }
 
     /* ── VOLUME CONTROL WIDGET ── */
@@ -303,25 +589,25 @@
     .volume-toggle-btn {
       width: 40px; height: 40px;
       border-radius: 50%;
-      border: 2px solid var(--card-wood, #c8a96e);
-      background: linear-gradient(135deg, #1a3d0a, #0a1f05);
-      color: var(--accent-gold, #d4a017);
+      border: 1px solid rgba(0,150,255,0.35);
+      background: linear-gradient(135deg, rgba(0,30,80,0.9), rgba(0,15,50,0.9));
+      color: #00d4ff;
       font-size: 17px;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+      box-shadow: 0 0 15px rgba(0,100,200,0.2), 0 2px 10px rgba(0,0,0,0.5);
       transition: transform .15s, box-shadow .15s;
       flex-shrink: 0;
       z-index: 1;
     }
-    .volume-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 4px 14px rgba(0,0,0,0.6); }
+    .volume-toggle-btn:hover { transform: scale(1.08); box-shadow: 0 0 25px rgba(0,144,255,0.3), 0 4px 14px rgba(0,0,0,0.6); }
 
     .volume-slider-panel {
       display: flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(135deg, #1a3d0a, #0a1f05);
-      border: 2px solid var(--card-wood, #c8a96e);
+      background: rgba(5,15,40,0.95);
+      border: 1px solid rgba(0,120,200,0.35);
       border-radius: 24px;
       padding: 6px 14px 6px 6px;
       margin-left: -20px;
@@ -331,7 +617,8 @@
       opacity: 0;
       transition: max-width .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .35s;
       white-space: nowrap;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      box-shadow: 0 0 15px rgba(0,80,180,0.15), 0 2px 10px rgba(0,0,0,0.5);
+      backdrop-filter: blur(8px);
     }
     .volume-slider-panel.open {
       max-width: 180px;
@@ -341,7 +628,7 @@
 
     .volume-icon-label {
       font-size: 13px;
-      color: var(--accent-gold, #d4a017);
+      color: #00d4ff;
       flex-shrink: 0;
     }
 
@@ -351,7 +638,7 @@
       width: 100px;
       height: 4px;
       border-radius: 4px;
-      background: linear-gradient(to right, var(--accent-gold, #d4a017) var(--vol-pct, 80%), rgba(255,255,255,0.15) var(--vol-pct, 80%));
+      background: linear-gradient(to right, #00d4ff var(--vol-pct, 80%), rgba(0,80,150,0.3) var(--vol-pct, 80%));
       outline: none;
       cursor: pointer;
       flex-shrink: 0;
@@ -360,9 +647,9 @@
       -webkit-appearance: none;
       width: 16px; height: 16px;
       border-radius: 50%;
-      background: var(--accent-gold, #d4a017);
-      border: 2px solid #fff;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      background: #00d4ff;
+      border: 2px solid rgba(255,255,255,0.3);
+      box-shadow: 0 0 8px rgba(0,200,255,0.5), 0 1px 4px rgba(0,0,0,0.4);
       cursor: pointer;
       transition: transform .1s;
     }
@@ -370,15 +657,15 @@
     .volume-range::-moz-range-thumb {
       width: 16px; height: 16px;
       border-radius: 50%;
-      background: var(--accent-gold, #d4a017);
-      border: 2px solid #fff;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      background: #00d4ff;
+      border: 2px solid rgba(255,255,255,0.3);
+      box-shadow: 0 0 8px rgba(0,200,255,0.5);
       cursor: pointer;
     }
     .volume-pct-label {
-      font-family: 'Nunito', sans-serif;
-      font-size: 11px; font-weight: 700;
-      color: rgba(255,255,255,0.7);
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; font-weight: 700;
+      color: rgba(0,200,255,0.6);
       min-width: 28px;
       flex-shrink: 0;
     }
@@ -409,10 +696,14 @@
      MENU SCREEN
 ══════════════════════════════════════════════ -->
 <div class="menu-screen" id="menu-screen">
-  <img src="logo.png" alt="Grid Guardians – Energy Crisis" class="menu-logo"
-       onerror="this.style.display='none'; document.getElementById('menu-title-fallback').style.display='block'"/>
-  <div id="menu-title-fallback" style="display:none; font-family:'Space Grotesk',sans-serif; font-size:36px; font-weight:700; color:#fff; text-align:center; text-shadow: 0 0 40px rgba(80,140,255,0.8);">
-    ⚡ Grid Guardians<br><span style="font-size:20px; color:#93c5fd;">Energy Crisis</span>
+
+  <!-- Pressable logo -->
+  <div class="menu-logo-wrap" id="menu-logo-wrap" onclick="playSound('snd-tile-click')" title="Grid Guardians – Energy Crisis">
+    <img src="logo.png" alt="Grid Guardians – Energy Crisis" class="menu-logo"
+         onerror="this.style.display='none'; document.getElementById('menu-title-fallback').style.display='block'"/>
+  </div>
+  <div id="menu-title-fallback" style="display:none;">
+    ⚡ Grid Guardians<br><span style="font-size:clamp(14px,3vw,20px); color:#7ec8e3; font-weight:600;">Energy Crisis</span>
   </div>
 
   <div class="menu-card">
@@ -426,8 +717,123 @@
            placeholder="Enter your name…" maxlength="20"
            onkeydown="if(event.key==='Enter') joinGame()"/>
 
-    <button class="menu-btn" id="join-btn" onclick="joinGame()">Join Game →</button>
+    <button class="menu-btn" id="join-btn" onclick="joinGame()">⚡ Join Game</button>
+    <button class="menu-btn-secondary" onclick="openHowToPlay()">📋 How to Play</button>
     <div class="menu-status" id="menu-status-msg">Enter your name to join</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     HOW TO PLAY MODAL
+══════════════════════════════════════════════ -->
+<div class="htp-overlay" id="htp-overlay">
+  <div class="htp-box">
+    <button class="htp-close" onclick="closeHowToPlay()" title="Close">✕</button>
+    <div class="htp-title">⚡ How to Play</div>
+    <div class="htp-divider"></div>
+
+    <!-- Goal -->
+    <div>
+      <div class="htp-section-title">🎯 Objective</div>
+      <div class="htp-text">
+        Work together to guide the energy grid through a full loop of the board. Answer questions correctly to keep your Economy, Environment, and Society balanced — and build up enough EU Counter to win!
+      </div>
+    </div>
+
+    <div class="htp-divider"></div>
+
+    <!-- Board tiles -->
+    <div>
+      <div class="htp-section-title">🗺️ Board Tiles</div>
+      <div class="htp-tile-grid">
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#e88a00,#b55a00);"></div>
+          <div class="htp-tile-label">☀️ Solar</div>
+        </div>
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#0d6bbf,#084a8a);"></div>
+          <div class="htp-tile-label">💨 Wind</div>
+        </div>
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#007a8c,#004a58);"></div>
+          <div class="htp-tile-label">⚛️ Nuclear</div>
+        </div>
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#b54a00,#7a2e00);"></div>
+          <div class="htp-tile-label">🌋 Geothermal</div>
+        </div>
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#1a8c3d,#0d5a26);"></div>
+          <div class="htp-tile-label">🌿 Bioenergy</div>
+        </div>
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#5a1a9a,#3a0d6e);"></div>
+          <div class="htp-tile-label">⚠️ Challenge</div>
+        </div>
+        <div class="htp-tile-item">
+          <div class="htp-tile-dot" style="background:linear-gradient(145deg,#9a1a2e,#6e0d1e);"></div>
+          <div class="htp-tile-label">🔴 Crisis</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="htp-divider"></div>
+
+    <!-- Turn flow -->
+    <div>
+      <div class="htp-section-title">🔄 Turn Flow</div>
+      <div class="htp-text">
+        <strong style="color:#c8e8ff;">1. Land on a tile</strong> — click the glowing tile to activate it.<br>
+        <strong style="color:#c8e8ff;">2. Answer a question</strong> — choose the best answer about that energy source.<br>
+        <strong style="color:#c8e8ff;">3. Earn rewards</strong> — correct answers boost your metrics and EU Counter.<br>
+        <strong style="color:#c8e8ff;">4. Challenge tiles</strong> — present an industry scenario with 3 options; each affects metrics differently.<br>
+        <strong style="color:#c8e8ff;">5. Crisis tiles</strong> — answer 3 emergency questions correctly to avoid heavy penalties.
+      </div>
+    </div>
+
+    <div class="htp-divider"></div>
+
+    <!-- Metrics -->
+    <div>
+      <div class="htp-section-title">📊 Metrics</div>
+      <div class="htp-metric-list">
+        <div class="htp-metric-row">
+          <span class="htp-metric-icon">💰</span>
+          <span class="htp-metric-name" style="color:#00d4ff;">Economy</span>
+          <span>Keep it above 0 — reflects industrial and economic health.</span>
+        </div>
+        <div class="htp-metric-row">
+          <span class="htp-metric-icon">🌿</span>
+          <span class="htp-metric-name" style="color:#00ff88;">Environment</span>
+          <span>CO₂ impact and ecological balance. Don't let it collapse!</span>
+        </div>
+        <div class="htp-metric-row">
+          <span class="htp-metric-icon">👥</span>
+          <span class="htp-metric-name" style="color:#7b5ea7;">Society</span>
+          <span>Public acceptance and wellbeing of communities.</span>
+        </div>
+        <div class="htp-metric-row">
+          <span class="htp-metric-icon">⚡</span>
+          <span class="htp-metric-name" style="color:#ff6b35;">EU Counter</span>
+          <span>Builds up as you succeed. Reach 30+ to win the game!</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="htp-divider"></div>
+
+    <!-- Win/Lose -->
+    <div>
+      <div class="htp-section-title">🏆 Winning & Losing</div>
+      <div class="htp-text">
+        Complete a full loop of the board. At the end:<br>
+        <strong style="color:#00ff88;">Victory</strong> — if all three metrics stay above 0 and EU Counter ≥ 30.<br>
+        <strong style="color:#ffaa00;">Partial</strong> — EU Counter is positive but some metrics are low.<br>
+        <strong style="color:#ff4466;">Defeat</strong> — any metric hits 0 or EU Counter stays at 0.
+      </div>
+    </div>
+
+    <button class="htp-ok-btn" onclick="closeHowToPlay()">GOT IT — LET'S PLAY!</button>
   </div>
 </div>
 
@@ -983,10 +1389,19 @@ document.getElementById('board-grid').addEventListener('click',function(e){
   else                       openEnergyQ(type,t.querySelector('span').textContent);
 });
 
+// ── Dialog type theming ──
+var TYPE_CSS = {solar:'solar',wind:'wind',nuclear:'nuclear',geothermal:'geo',biomass:'bio',challenge:'challenge',crisis:'crisis'};
+function setDialogType(type){
+  var box = document.querySelector('.dialog-box');
+  box.className = 'dialog-box';
+  if(type && TYPE_CSS[type]) box.classList.add('type--'+TYPE_CSS[type]);
+}
+
 // ============================================================
 // ENERGY Q
 // ============================================================
 function openEnergyQ(type,label){
+  setDialogType(type);
   var q=pickQuestion(type); if(!q) return;
   showQuestion(label+' Question','Answer correctly to earn +3 EU Counter','',q,function(correct){
     var delta=correct?{eu:3}:{eu:0};
@@ -1003,6 +1418,7 @@ function openEnergyQ(type,label){
 // ============================================================
 function fmt(n){return(n>=0?'+':'')+n;}
 function openChallenge(){
+  setDialogType('challenge');
   var card=CHALLENGE_CARDS[state.challengeIdx%CHALLENGE_CARDS.length];
   var canA=state.eu>=card.euCost;
   document.getElementById('dialog-progress').textContent='DEVELOPMENT CHALLENGE';
@@ -1041,6 +1457,7 @@ function openChallenge(){
 // CRISIS
 // ============================================================
 function openCrisis(){
+  setDialogType('crisis');
   var card=CRISIS_CARDS[state.crisisIdx%CRISIS_CARDS.length];
   state.crisisCard=card; state.crisisQIdx=0; state.crisisAllCorrect=true;
   askCrisisQ();
@@ -1189,6 +1606,7 @@ function onContinue(){
 // ============================================================
 function finishTurn(){
   document.getElementById('dialog').classList.remove('open');
+  setDialogType(null);
   broadcastAction({ type: 'dialog_close' }); // close dialog for all other players
   syncState(); // broadcast to other players
   if(state.currentIndex>=LAST_INDEX){
@@ -1290,6 +1708,7 @@ function closeDialog(){
   // Only allow closing when the question area is visible (not mid-result)
   if(document.getElementById('result-area').style.display !== 'none') return;
   document.getElementById('dialog').classList.remove('open');
+  setDialogType(null);
   tileClickEnabled = true;
   _answerCb = null;
   _continueCb = null;
@@ -1499,6 +1918,29 @@ function onVolumeChange(val){
 }
 // Set initial CSS custom property
 document.getElementById('volume-range').style.setProperty('--vol-pct', '80%');
+
+// ============================================================
+// HOW TO PLAY MODAL
+// ============================================================
+function openHowToPlay(){
+  _unlockAudio();
+  playSound('snd-tile-click');
+  document.getElementById('htp-overlay').classList.add('open');
+}
+function closeHowToPlay(){
+  playSound('snd-menu-return');
+  document.getElementById('htp-overlay').classList.remove('open');
+}
+// Close on overlay backdrop click
+document.getElementById('htp-overlay').addEventListener('click', function(e){
+  if(e.target === this) closeHowToPlay();
+});
+// Close on Escape key
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && document.getElementById('htp-overlay').classList.contains('open')){
+    closeHowToPlay();
+  }
+});
 
 // ============================================================
 // INIT — watch lobby immediately, game starts only after joinGame()
