@@ -800,7 +800,7 @@
         <div class="htp-metric-row">
           <span class="htp-metric-icon">💰</span>
           <span class="htp-metric-name" style="color:#00d4ff;">Economy</span>
-          <span>Keep it above 0 — reflects industrial and economic health.</span>
+          <span>Reflects the industrial and economic health of your society. Strong economy enables investment in clean energy infrastructure and resilient systems.</span>
         </div>
         <div class="htp-metric-row">
           <span class="htp-metric-icon">🌿</span>
@@ -814,8 +814,8 @@
         </div>
         <div class="htp-metric-row">
           <span class="htp-metric-icon">⚡</span>
-          <span class="htp-metric-name" style="color:#ff6b35;">EU Counter</span>
-          <span>Builds up as you succeed. Reach 30+ to win the game!</span>
+          <span class="htp-metric-name" style="color:#ff6b35;">Energy Units</span>
+          <span>Your resource for tackling challenges — spend them wisely. You can't keep them high!</span>
         </div>
       </div>
     </div>
@@ -826,10 +826,10 @@
     <div>
       <div class="htp-section-title">🏆 Winning & Losing</div>
       <div class="htp-text">
-        Complete a full loop of the board. At the end:<br>
-        <strong style="color:#00ff88;">Victory</strong> — if all three metrics stay above 0 and EU Counter ≥ 30.<br>
-        <strong style="color:#ffaa00;">Partial</strong> — EU Counter is positive but some metrics are low.<br>
-        <strong style="color:#ff4466;">Defeat</strong> — any metric hits 0 or EU Counter stays at 0.
+        Complete a full loop of the board. Energy Units must be spent on challenges along the way — don't hoard them! At the end:<br>
+        <strong style="color:#00ff88;">Victory</strong> — all three metrics (Economy, Environment, Society) are above 40.<br>
+        <strong style="color:#ffaa00;">Partial</strong> — all three metrics are above 30, but at least one hasn't reached 40.<br>
+        <strong style="color:#ff4466;">Defeat</strong> — any metric drops to 30 or below.
       </div>
     </div>
 
@@ -1064,15 +1064,31 @@ function renderLobbyPlayers(){
 // ── Apply a remote action to local state ──
 function handleRemoteAction(action){
   if(action.type === 'state_sync'){
-    state.eco          = action.eco;
-    state.env          = action.env;
-    state.soc          = action.soc;
-    state.eu           = action.eu;
-    state.currentIndex = action.currentIndex;
-    state.challengeIdx = action.challengeIdx;
-    state.crisisIdx    = action.crisisIdx;
-    updateSliders();
-    refreshBoard();
+    // Only apply state_sync when a dialog is NOT open on our side,
+    // to prevent overwriting metrics mid-dialog on the tile-owner.
+    // Remote observers (no _answerCb) always accept state updates.
+    if(!_answerCb){
+      state.eco          = action.eco;
+      state.env          = action.env;
+      state.soc          = action.soc;
+      state.eu           = action.eu;
+      state.currentIndex = action.currentIndex;
+      state.challengeIdx = action.challengeIdx;
+      state.crisisIdx    = action.crisisIdx;
+      updateSliders();
+      refreshBoard();
+    } else {
+      // We are the tile-owner mid-question: accept index/counter updates only
+      state.currentIndex = action.currentIndex;
+      state.challengeIdx = action.challengeIdx;
+      state.crisisIdx    = action.crisisIdx;
+      // Accept metric values (they come from our own applyDelta calls, just keep in sync)
+      state.eco = action.eco;
+      state.env = action.env;
+      state.soc = action.soc;
+      state.eu  = action.eu;
+      updateSliders();
+    }
   } else if(action.type === 'request_state'){
     // A new player joined — if we're in-game, send them our current state
     if(document.getElementById('game-screen').style.display !== 'none'){
@@ -1303,11 +1319,12 @@ var state={eco:25,env:25,soc:25,eu:0,currentIndex:0,challengeIdx:0,crisisIdx:0,c
 function clamp(v,mn,mx){return Math.max(mn,Math.min(mx,v));}
 
 function applyDelta(d){
-  if(d.eco) state.eco=clamp(state.eco+d.eco,0,50);
-  if(d.env) state.env=clamp(state.env+d.env,0,50);
-  if(d.soc) state.soc=clamp(state.soc+d.soc,0,50);
-  if(d.eu)  state.eu =clamp(state.eu +d.eu ,0,50);
+  if(d.eco != null && d.eco !== 0) state.eco=clamp(state.eco+d.eco,0,50);
+  if(d.env != null && d.env !== 0) state.env=clamp(state.env+d.env,0,50);
+  if(d.soc != null && d.soc !== 0) state.soc=clamp(state.soc+d.soc,0,50);
+  if(d.eu  != null && d.eu  !== 0) state.eu =clamp(state.eu +d.eu ,0,50);
   updateSliders();
+  syncState(); // always broadcast updated state to all players after any metric change
 }
 
 function updateSliders(){
@@ -1442,7 +1459,8 @@ function openChallenge(){
       playSound('snd-challenge-click');
       var delta={eco:d.eco,env:d.env,soc:d.soc};
       if(opt.label.startsWith('A')) delta.eu=-card.euCost;
-      applyDelta(delta); state.challengeIdx++;
+      state.challengeIdx++; // increment BEFORE applyDelta so syncState carries the new index
+      applyDelta(delta);
       showResult('correct','Choice Made!',opt.label,deltaStr(delta),function(){ finishTurn(); });
     };
     list.appendChild(b);
@@ -1458,8 +1476,12 @@ function openChallenge(){
 // ============================================================
 function openCrisis(){
   setDialogType('crisis');
-  var card=CRISIS_CARDS[state.crisisIdx%CRISIS_CARDS.length];
-  state.crisisCard=card; state.crisisQIdx=0; state.crisisAllCorrect=true;
+  // Resume in-progress crisis if player closed the popup mid-streak
+  var inProgress = state.crisisCard && state.crisisQIdx > 0 && state.crisisQIdx < 3;
+  if(!inProgress){
+    var card=CRISIS_CARDS[state.crisisIdx%CRISIS_CARDS.length];
+    state.crisisCard=card; state.crisisQIdx=0; state.crisisAllCorrect=true;
+  }
   askCrisisQ();
 }
 function askCrisisQ(){
@@ -1473,7 +1495,8 @@ function askCrisisQ(){
       } else {
         var allOk=state.crisisAllCorrect;
         var delta=allOk?card.reward:{eu:card.penalty.eu,eco:card.penalty.eco,env:card.penalty.env,soc:card.penalty.soc};
-        applyDelta(delta); state.crisisIdx++;
+        state.crisisIdx++; // increment BEFORE applyDelta so syncState carries the new index
+        applyDelta(delta);
         showResult(allOk?'correct':'incorrect',allOk?'All Correct! Reward Earned ✓':'Penalty Applied ✗',
           allOk?'All 3 answers correct — reward applied.':'At least one wrong — full penalty applied.',
           deltaStr(delta),function(){ finishTurn(); });
@@ -1536,13 +1559,14 @@ function applyDialogSnapshot(snap){
       // Allow any player to answer
       b.onclick = function(){
         list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
-        // We don't know the correct answer index from snapshot, so we store it in the snap
-        var isCorrect = (snap.answerIndex !== undefined) ? (i === snap.answerIndex) : null;
+        // Broadcast the chosen index — the tile-owner's _answerCb will apply the delta
         broadcastAction({ type: 'remote_answer', optionIndex: i });
-        // Show a neutral "answered" result for remote players since they don't know correct answer
+        // Show the result locally for the remote player without applying the delta again
+        // (the tile-owner will sync state after applying it once via _answerCb)
+        var isCorrect = (snap.answerIndex !== undefined) ? (i === snap.answerIndex) : null;
         if(isCorrect !== null){
           var delta = isCorrect ? {eu:3} : {};
-          if(isCorrect) applyDelta(delta);
+          // Do NOT call applyDelta here — tile-owner applies it exactly once
           showResult(isCorrect?'correct':'incorrect', isCorrect?'Correct! ✓':'Incorrect ✗',
             isCorrect?'You earned +3 EU Counter!':'No change to metrics.', deltaStr(delta), function(){ finishTurn(); });
         }
@@ -1608,12 +1632,12 @@ function finishTurn(){
   document.getElementById('dialog').classList.remove('open');
   setDialogType(null);
   broadcastAction({ type: 'dialog_close' }); // close dialog for all other players
-  syncState(); // broadcast to other players
   if(state.currentIndex>=LAST_INDEX){
+    syncState(); // final sync before showing endgame
     setTimeout(showEndGame,400);
   } else {
     state.currentIndex=Math.min(state.currentIndex+1,LAST_INDEX);
-    syncState();
+    syncState(); // sync new board position to all players
     playSound('snd-move-forward');
     setTimeout(refreshBoard,300);
   }
