@@ -1064,30 +1064,18 @@ function renderLobbyPlayers(){
 // ── Apply a remote action to local state ──
 function handleRemoteAction(action){
   if(action.type === 'state_sync'){
-    // Only apply state_sync when a dialog is NOT open on our side,
-    // to prevent overwriting metrics mid-dialog on the tile-owner.
-    // Remote observers (no _answerCb) always accept state updates.
-    if(!_answerCb){
-      state.eco          = action.eco;
-      state.env          = action.env;
-      state.soc          = action.soc;
-      state.eu           = action.eu;
-      state.currentIndex = action.currentIndex;
-      state.challengeIdx = action.challengeIdx;
-      state.crisisIdx    = action.crisisIdx;
-      updateSliders();
+    // Always apply incoming metric values so all players stay in sync
+    state.eco          = action.eco;
+    state.env          = action.env;
+    state.soc          = action.soc;
+    state.eu           = action.eu;
+    state.currentIndex = action.currentIndex;
+    state.challengeIdx = action.challengeIdx;
+    state.crisisIdx    = action.crisisIdx;
+    updateSliders();
+    // Only refresh board position when no dialog is active (avoids mid-question board jumps)
+    if(!_answerCb && !document.getElementById('dialog').classList.contains('open')){
       refreshBoard();
-    } else {
-      // We are the tile-owner mid-question: accept index/counter updates only
-      state.currentIndex = action.currentIndex;
-      state.challengeIdx = action.challengeIdx;
-      state.crisisIdx    = action.crisisIdx;
-      // Accept metric values (they come from our own applyDelta calls, just keep in sync)
-      state.eco = action.eco;
-      state.env = action.env;
-      state.soc = action.soc;
-      state.eu  = action.eu;
-      updateSliders();
     }
   } else if(action.type === 'request_state'){
     // A new player joined — if we're in-game, send them our current state
@@ -1116,11 +1104,17 @@ function handleRemoteAction(action){
   } else if(action.type === 'chat_message'){
     appendChatMessage(action.author, action.text, false);
   } else if(action.type === 'remote_answer'){
-    // Another player answered — if we're the tile-owner (have _answerCb), evaluate it
+    // Another player answered a question — if we're the tile-owner (have _answerCb), evaluate it
     if(_answerCb){
       var cb = _answerCb; _answerCb = null;
       document.getElementById('options-list').querySelectorAll('button').forEach(function(x){x.disabled=true;});
       cb(action.optionIndex === _currentAnswerIndex);
+    }
+  } else if(action.type === 'remote_challenge_choice'){
+    // Another player chose a challenge option — tile-owner applies it
+    if(_challengeChoiceHandler){
+      var h = _challengeChoiceHandler; _challengeChoiceHandler = null;
+      h(action.optionIndex);
     }
   } else if(action.type === 'remote_continue'){
     if(_continueCb){ var cb=_continueCb; _continueCb=null; cb(); }
@@ -1422,9 +1416,10 @@ function openEnergyQ(type,label){
   var q=pickQuestion(type); if(!q) return;
   showQuestion(label+' Question','Answer correctly to earn +3 EU Counter','',q,function(correct){
     var delta=correct?{eu:3}:{eu:0};
+    // Apply delta immediately so syncState (inside showResult broadcast) carries updated values
+    if(correct) applyDelta(delta);
     showResult(correct?'correct':'incorrect',correct?'Correct! ✓':'Incorrect ✗',
       correct?'You earned +3 EU Counter!':'No change to metrics.',deltaStr(delta),function(){
-        if(correct) applyDelta(delta);
         finishTurn();
       });
   });
@@ -1438,6 +1433,9 @@ function openChallenge(){
   setDialogType('challenge');
   var card=CHALLENGE_CARDS[state.challengeIdx%CHALLENGE_CARDS.length];
   var canA=state.eu>=card.euCost;
+  _snapshotCardType='challenge';
+  _snapshotContinueAction='finish_turn';
+  _currentAnswerIndex=null; // challenge has no correct/incorrect answer index
   document.getElementById('dialog-progress').textContent='DEVELOPMENT CHALLENGE';
   document.getElementById('dialog-title').textContent=card.name;
   document.getElementById('dialog-desc').innerHTML='EU Cost: '+card.euCost+(canA?'':' — ⚠️ Not enough EU for Option A');
@@ -1445,34 +1443,46 @@ function openChallenge(){
   document.getElementById('question-area').style.display='block';
   document.getElementById('result-area').style.display='none';
   var list=document.getElementById('options-list'); list.innerHTML='';
-  [{label:'A — Clean Energy',d:card.optA,disabled:!canA},
-   {label:'B — Fossil Fuels', d:card.optB,disabled:false},
-   {label:'C — Skip',         d:card.optC,disabled:false}
-  ].forEach(function(opt){
+  var opts=[
+    {label:'A — Clean Energy',d:card.optA,disabled:!canA},
+    {label:'B — Fossil Fuels', d:card.optB,disabled:false},
+    {label:'C — Skip',         d:card.optC,disabled:false}
+  ];
+  // Store a handler so the tile-owner can respond to remote_challenge_choice
+  _challengeChoiceHandler = function(optIndex){
+    var opt=opts[optIndex]; if(!opt||opt.disabled) return;
+    list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
+    playSound('snd-challenge-click');
+    var d=opt.d;
+    var delta={eco:d.eco,env:d.env,soc:d.soc};
+    if(opt.label.startsWith('A')) delta.eu=-card.euCost;
+    state.challengeIdx++;
+    applyDelta(delta);
+    showResult('correct','Choice Made!',opt.label,deltaStr(delta),function(){ finishTurn(); });
+  };
+  opts.forEach(function(opt,i){
     var b=document.createElement('button'); b.className='option-btn'; b.disabled=opt.disabled;
     if(opt.disabled) b.style.opacity='0.4';
     var d=opt.d;
     b.innerHTML='<span class="option-letter">'+opt.label.charAt(0)+')</span>'+opt.label.slice(2)+
       ' <small style="color:#6b7280">(Eco '+fmt(d.eco)+' Env '+fmt(d.env)+' Soc '+fmt(d.soc)+')</small>';
     b.onclick=function(){
-      list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
-      playSound('snd-challenge-click');
-      var delta={eco:d.eco,env:d.env,soc:d.soc};
-      if(opt.label.startsWith('A')) delta.eu=-card.euCost;
-      state.challengeIdx++; // increment BEFORE applyDelta so syncState carries the new index
-      applyDelta(delta);
-      showResult('correct','Choice Made!',opt.label,deltaStr(delta),function(){ finishTurn(); });
+      if(!_applyingSnapshot){
+        // Tile-owner clicked: apply locally and broadcast choice index
+        broadcastAction({ type: 'remote_challenge_choice', optionIndex: i });
+        _challengeChoiceHandler(i);
+        _challengeChoiceHandler = null;
+      }
     };
     list.appendChild(b);
   });
   document.getElementById('dialog').classList.add('open');
   updateCloseBtn();
-  broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
-  playSound('snd-popup-open');
+  if(!_applyingSnapshot){
+    broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+    playSound('snd-popup-open');
+  }
 }
-
-// ============================================================
-// CRISIS
 // ============================================================
 function openCrisis(){
   setDialogType('crisis');
@@ -1486,16 +1496,20 @@ function openCrisis(){
 }
 function askCrisisQ(){
   var card=state.crisisCard,qi=state.crisisQIdx,q=card.questions[qi];
+  _snapshotCardType='crisis';
+  _snapshotContinueAction='finish_turn'; // overridden below for intermediate questions
   showQuestion('⚠️ '+card.name,'All three questions must be answered correctly for the reward.',
     'CRISIS — Question '+(qi+1)+' of 3 — All 3 must be correct!',q,function(correct){
       if(!correct) state.crisisAllCorrect=false;
       state.crisisQIdx++;
       if(state.crisisQIdx<3){
+        _snapshotContinueAction='next_question'; // tell remote: Continue = wait for next question push
         showResult(correct?'correct':'incorrect',correct?'✓ Correct!':'✗ Wrong!','Next question coming up…','',function(){ askCrisisQ(); });
       } else {
         var allOk=state.crisisAllCorrect;
         var delta=allOk?card.reward:{eu:card.penalty.eu,eco:card.penalty.eco,env:card.penalty.env,soc:card.penalty.soc};
-        state.crisisIdx++; // increment BEFORE applyDelta so syncState carries the new index
+        state.crisisIdx++;
+        _snapshotContinueAction='finish_turn';
         applyDelta(delta);
         showResult(allOk?'correct':'incorrect',allOk?'All Correct! Reward Earned ✓':'Penalty Applied ✗',
           allOk?'All 3 answers correct — reward applied.':'At least one wrong — full penalty applied.',
@@ -1511,10 +1525,12 @@ function askCrisisQ(){
 function getDialogSnapshot(){
   var inResult = document.getElementById('result-area').style.display !== 'none';
   var snapshot = {
-    progress: document.getElementById('dialog-progress').textContent,
-    title:    document.getElementById('dialog-title').textContent,
-    desc:     document.getElementById('dialog-desc').innerHTML,
-    inResult: inResult
+    progress:       document.getElementById('dialog-progress').textContent,
+    title:          document.getElementById('dialog-title').textContent,
+    desc:           document.getElementById('dialog-desc').innerHTML,
+    inResult:       inResult,
+    cardType:       _snapshotCardType,
+    continueAction: _snapshotContinueAction
   };
   if(inResult){
     snapshot.resultClass = document.getElementById('result-box').className;
@@ -1534,6 +1550,7 @@ function getDialogSnapshot(){
 }
 
 function applyDialogSnapshot(snap){
+  _applyingSnapshot = true;
   document.getElementById('dialog-progress').textContent = snap.progress;
   document.getElementById('dialog-title').textContent    = snap.title;
   document.getElementById('dialog-desc').innerHTML       = snap.desc;
@@ -1545,30 +1562,43 @@ function applyDialogSnapshot(snap){
     document.getElementById('result-sub').textContent      = snap.resultSub;
     document.getElementById('metric-delta').innerHTML      = snap.resultPills;
     document.getElementById('dialog-close-btn').style.display = 'none';
-    // Allow remote players to press Continue too
-    _continueCb = function(){ finishTurn(); };
+    updateCloseBtn();
+    // Set the correct continue action based on what the tile-owner will do
+    if(snap.continueAction === 'next_question'){
+      // Crisis intermediate — Continue means "go to next crisis question" for remote too
+      // We do NOT call finishTurn; instead we wait for the next dialog_open broadcast
+      _continueCb = function(){ /* tile-owner will push next question via remote_continue */ };
+    } else {
+      // Default: finish turn
+      _continueCb = function(){ finishTurn(); };
+    }
   } else {
     document.getElementById('question-area').style.display = 'block';
     document.getElementById('result-area').style.display   = 'none';
     document.getElementById('question-text').textContent   = snap.questionText;
     var list = document.getElementById('options-list');
     list.innerHTML = '';
+    var isChallenge = (snap.cardType === 'challenge');
     (snap.options||[]).forEach(function(opt,i){
       var b = document.createElement('button'); b.className = 'option-btn';
       b.innerHTML = '<span class="option-letter">'+String.fromCharCode(65+i)+')</span>'+opt;
-      // Allow any player to answer
       b.onclick = function(){
         list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
-        // Broadcast the chosen index — the tile-owner's _answerCb will apply the delta
-        broadcastAction({ type: 'remote_answer', optionIndex: i });
-        // Show the result locally for the remote player without applying the delta again
-        // (the tile-owner will sync state after applying it once via _answerCb)
-        var isCorrect = (snap.answerIndex !== undefined) ? (i === snap.answerIndex) : null;
-        if(isCorrect !== null){
-          var delta = isCorrect ? {eu:3} : {};
-          // Do NOT call applyDelta here — tile-owner applies it exactly once
-          showResult(isCorrect?'correct':'incorrect', isCorrect?'Correct! ✓':'Incorrect ✗',
-            isCorrect?'You earned +3 EU Counter!':'No change to metrics.', deltaStr(delta), function(){ finishTurn(); });
+        if(isChallenge){
+          // Challenge: broadcast choice index — tile-owner applies the delta
+          broadcastAction({ type: 'remote_challenge_choice', optionIndex: i });
+          // Remote player just waits for the dialog_open snapshot with the result
+        } else {
+          // Question: broadcast answer index — tile-owner evaluates correct/incorrect
+          broadcastAction({ type: 'remote_answer', optionIndex: i });
+          // Show local feedback; metrics arrive via state_sync from the tile-owner
+          var isCorrect = (snap.answerIndex !== undefined) ? (i === snap.answerIndex) : null;
+          if(isCorrect !== null){
+            _applyingSnapshot = true;
+            showResult(isCorrect?'correct':'incorrect', isCorrect?'Correct! ✓':'Incorrect ✗',
+              isCorrect?'You earned +3 EU Counter!':'No change to metrics.', '', function(){ /* tile-owner drives */ });
+            _applyingSnapshot = false;
+          }
         }
       };
       list.appendChild(b);
@@ -1576,14 +1606,19 @@ function applyDialogSnapshot(snap){
     document.getElementById('dialog-close-btn').style.display = 'flex';
     updateCloseBtn();
   }
+  _applyingSnapshot = false;
 }
 
 // DIALOG HELPERS
 // ============================================================
-var _answerCb=null,_continueCb=null,_currentAnswerIndex=null;
+var _answerCb=null,_continueCb=null,_currentAnswerIndex=null,_applyingSnapshot=false;
+var _snapshotCardType='question',_snapshotContinueAction='finish_turn';
+var _challengeChoiceHandler=null;
 function showQuestion(title,desc,progress,q,onAnswer){
   _answerCb=onAnswer;
   _currentAnswerIndex=q.a; // store for snapshot
+  _snapshotCardType='question';
+  _snapshotContinueAction='finish_turn';
   document.getElementById('dialog-progress').textContent=progress;
   document.getElementById('dialog-title').textContent=title;
   document.getElementById('dialog-desc').textContent=desc;
@@ -1599,8 +1634,10 @@ function showQuestion(title,desc,progress,q,onAnswer){
   });
   document.getElementById('dialog').classList.add('open');
   updateCloseBtn();
-  broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
-  playSound('snd-popup-open');
+  if(!_applyingSnapshot){
+    broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+    playSound('snd-popup-open');
+  }
 }
 function showResult(cls,title,sub,pills,onContinueCb){
   _continueCb=onContinueCb;
@@ -1614,8 +1651,11 @@ function showResult(cls,title,sub,pills,onContinueCb){
   // Play answer outcome sound (only for result states that indicate right/wrong)
   if(cls==='correct') playSound('snd-correct');
   else if(cls==='incorrect') playSound('snd-wrong');
-  // Sync result view to other players
-  broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+  // Sync updated state + result view to all players atomically (skip when applying a remote snapshot)
+  if(!_applyingSnapshot){
+    syncState();
+    broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+  }
 }
 function onContinue(){
   if(_continueCb){
@@ -1710,6 +1750,9 @@ function applyRestart(silent){
   _answerCb=null;
   _continueCb=null;
   _currentAnswerIndex=null;
+  _challengeChoiceHandler=null;
+  _snapshotCardType='question';
+  _snapshotContinueAction='finish_turn';
   updateSliders();
   document.getElementById('endgame').style.display='none';
   document.getElementById('dialog').classList.remove('open');
