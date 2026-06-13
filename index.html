@@ -1096,6 +1096,7 @@ function handleRemoteAction(action){
   } else if(action.type === 'goto_menu'){
     applyGoToMenu();
   } else if(action.type === 'dialog_open'){
+    tileClickEnabled = false; // lock board while dialog is open on all clients
     if(action.snapshot) applyDialogSnapshot(action.snapshot);
     document.getElementById('dialog').classList.add('open');
   } else if(action.type === 'dialog_close'){
@@ -1450,7 +1451,13 @@ function openChallenge(){
   ];
   // Store a handler so the tile-owner can respond to remote_challenge_choice
   _challengeChoiceHandler = function(optIndex){
-    var opt=opts[optIndex]; if(!opt||opt.disabled) return;
+    var opt=opts[optIndex];
+    if(!opt||opt.disabled){
+      // Remote player clicked a disabled option (e.g. Clean Energy with insufficient EU).
+      // Re-broadcast the current dialog snapshot so their UI resets to the choosable state.
+      broadcastAction({ type: 'dialog_open', snapshot: getDialogSnapshot() });
+      return;
+    }
     list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
     playSound('snd-challenge-click');
     var d=opt.d;
@@ -1539,10 +1546,13 @@ function getDialogSnapshot(){
     snapshot.resultPills = document.getElementById('metric-delta').innerHTML;
   } else {
     snapshot.questionText = document.getElementById('question-text').textContent;
-    snapshot.answerIndex  = _currentAnswerIndex; // stored when question is shown
+    snapshot.answerIndex  = _currentAnswerIndex;
     var opts = [];
     document.getElementById('options-list').querySelectorAll('button').forEach(function(b){
-      opts.push(b.innerText.replace(/^[A-Z]\)\s*/,''));
+      opts.push({
+        html:     b.innerHTML,           // full inner HTML — preserves styling exactly
+        disabled: b.disabled
+      });
     });
     snapshot.options = opts;
   }
@@ -1581,13 +1591,19 @@ function applyDialogSnapshot(snap){
     var isChallenge = (snap.cardType === 'challenge');
     (snap.options||[]).forEach(function(opt,i){
       var b = document.createElement('button'); b.className = 'option-btn';
-      b.innerHTML = '<span class="option-letter">'+String.fromCharCode(65+i)+')</span>'+opt;
+      // Support both old plain-string format and new {html, disabled} format
+      var optHtml     = (typeof opt === 'object') ? opt.html     : ('<span class="option-letter">'+String.fromCharCode(65+i)+')</span>'+opt);
+      var optDisabled = (typeof opt === 'object') ? opt.disabled : false;
+      b.innerHTML = optHtml;
+      b.disabled  = optDisabled;
+      if(optDisabled) b.style.opacity = '0.4';
       b.onclick = function(){
+        if(b.disabled) return; // guard: ignore clicks on disabled buttons
         list.querySelectorAll('button').forEach(function(x){x.disabled=true;});
         if(isChallenge){
           // Challenge: broadcast choice index — tile-owner applies the delta
           broadcastAction({ type: 'remote_challenge_choice', optionIndex: i });
-          // Remote player just waits for the dialog_open snapshot with the result
+          // Remote player waits for the dialog_open snapshot with the result
         } else {
           // Question: broadcast answer index — tile-owner evaluates correct/incorrect
           broadcastAction({ type: 'remote_answer', optionIndex: i });
